@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="erro-geral-formulario">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     <form method="POST" id="form-pesquisa">
         <div id="erro-geral-formulario" class="erro-geral-formulario">
             A soma da pontuação do cenário atual e a soma da pontuação do cenário ideal, deve ser 100, para cada uma das dimensões.
