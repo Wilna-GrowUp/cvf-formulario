@@ -1,33 +1,48 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <form method="POST">
-        <div class="bloco">
-            <h1>{{ form_title }}</h1>
-            <p class="descricao">{{ form_description }}</p>
-        </div>
+<div class="bloco capa">
+    <h1>Diagnóstico de Cultura Organizacional - CVF</h1>
 
+    <p>
+        Esta pesquisa tem como objetivo identificar percepções sobre a cultura
+        organizacional atual e a cultura ideal da organização.
+    </p>
+
+    <p>
+        Antes de continuar, é necessário ler e aceitar o termo de consentimento.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="erro-geral-formulario">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
         <div class="bloco">
             <h2>Termo de consentimento</h2>
 
-            <p class="descricao">
-                Declaro que li as informações apresentadas e concordo em participar
-                voluntariamente desta pesquisa.
+            <p>
+                Declaro que li as informações da pesquisa e concordo em participar.
             </p>
 
-            <div class="consentimento-opcoes">
-                <label>
-                    <input type="radio" name="consentimento" value="sim" required>
-                    Sim
-                </label>
+            <label>
+                <input type="radio" name="consentimento" value="sim" required>
+                Sim, aceito participar
+            </label>
 
-                <label>
-                    <input type="radio" name="consentimento" value="nao">
-                    Não
-                </label>
-            </div>
+            <br><br>
 
-            <button type="submit" class="botao">Iniciar pesquisa</button>
+            <label>
+                <input type="radio" name="consentimento" value="nao" required>
+                Não aceito participar
+            </label>
         </div>
+
+        <button type="submit" class="botao">Continuar para a pesquisa</button>
     </form>
+</div>
 {% endblock %}
