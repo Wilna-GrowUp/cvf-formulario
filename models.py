@@ -1,260 +1,89 @@
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from config import Config
-from forms_data import DIMENSIONS
+from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
 
 
-def get_connection():
-    """
-    Abre conexão com o PostgreSQL usando a DATABASE_URL do .env.
-    """
-    if not Config.DATABASE_URL:
-        raise ValueError("DATABASE_URL não foi configurada no arquivo .env")
+class RespostaCVF(db.Model):
+    __tablename__ = "respostas_cvf"
 
-    return psycopg2.connect(Config.DATABASE_URL, cursor_factory=RealDictCursor)
+    id = db.Column(db.Integer, primary_key=True)
+    identificador = db.Column(db.String(20), unique=True, nullable=True)
 
+    consentimento = db.Column(db.Boolean, nullable=False, default=False)
+    data_envio = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-def create_table():
-    """
-    Cria a tabela principal de respostas do formulário CVF.
-    Se ela já existir, não apaga nada.
-    """
-    sql = """
-    CREATE TABLE IF NOT EXISTS respostas_cvf (
-        id SERIAL PRIMARY KEY,
-        ordem_resposta VARCHAR(20) UNIQUE,
-        data_resposta TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        consentimento VARCHAR(10) NOT NULL,
+    # CENÁRIO ATUAL - DIMENSÃO 1
+    atual_d1_a = db.Column(db.Integer, nullable=False)
+    atual_d1_b = db.Column(db.Integer, nullable=False)
+    atual_d1_c = db.Column(db.Integer, nullable=False)
+    atual_d1_d = db.Column(db.Integer, nullable=False)
 
-        caracteristicas_dominantes_atual_1 INTEGER NOT NULL,
-        caracteristicas_dominantes_atual_2 INTEGER NOT NULL,
-        caracteristicas_dominantes_atual_3 INTEGER NOT NULL,
-        caracteristicas_dominantes_atual_4 INTEGER NOT NULL,
-        caracteristicas_dominantes_ideal_1 INTEGER NOT NULL,
-        caracteristicas_dominantes_ideal_2 INTEGER NOT NULL,
-        caracteristicas_dominantes_ideal_3 INTEGER NOT NULL,
-        caracteristicas_dominantes_ideal_4 INTEGER NOT NULL,
+    # CENÁRIO ATUAL - DIMENSÃO 2
+    atual_d2_a = db.Column(db.Integer, nullable=False)
+    atual_d2_b = db.Column(db.Integer, nullable=False)
+    atual_d2_c = db.Column(db.Integer, nullable=False)
+    atual_d2_d = db.Column(db.Integer, nullable=False)
 
-        lideranca_atual_1 INTEGER NOT NULL,
-        lideranca_atual_2 INTEGER NOT NULL,
-        lideranca_atual_3 INTEGER NOT NULL,
-        lideranca_atual_4 INTEGER NOT NULL,
-        lideranca_ideal_1 INTEGER NOT NULL,
-        lideranca_ideal_2 INTEGER NOT NULL,
-        lideranca_ideal_3 INTEGER NOT NULL,
-        lideranca_ideal_4 INTEGER NOT NULL,
+    # CENÁRIO ATUAL - DIMENSÃO 3
+    atual_d3_a = db.Column(db.Integer, nullable=False)
+    atual_d3_b = db.Column(db.Integer, nullable=False)
+    atual_d3_c = db.Column(db.Integer, nullable=False)
+    atual_d3_d = db.Column(db.Integer, nullable=False)
 
-        gestao_de_pessoas_atual_1 INTEGER NOT NULL,
-        gestao_de_pessoas_atual_2 INTEGER NOT NULL,
-        gestao_de_pessoas_atual_3 INTEGER NOT NULL,
-        gestao_de_pessoas_atual_4 INTEGER NOT NULL,
-        gestao_de_pessoas_ideal_1 INTEGER NOT NULL,
-        gestao_de_pessoas_ideal_2 INTEGER NOT NULL,
-        gestao_de_pessoas_ideal_3 INTEGER NOT NULL,
-        gestao_de_pessoas_ideal_4 INTEGER NOT NULL,
+    # CENÁRIO ATUAL - DIMENSÃO 4
+    atual_d4_a = db.Column(db.Integer, nullable=False)
+    atual_d4_b = db.Column(db.Integer, nullable=False)
+    atual_d4_c = db.Column(db.Integer, nullable=False)
+    atual_d4_d = db.Column(db.Integer, nullable=False)
 
-        fator_de_coesao_atual_1 INTEGER NOT NULL,
-        fator_de_coesao_atual_2 INTEGER NOT NULL,
-        fator_de_coesao_atual_3 INTEGER NOT NULL,
-        fator_de_coesao_atual_4 INTEGER NOT NULL,
-        fator_de_coesao_ideal_1 INTEGER NOT NULL,
-        fator_de_coesao_ideal_2 INTEGER NOT NULL,
-        fator_de_coesao_ideal_3 INTEGER NOT NULL,
-        fator_de_coesao_ideal_4 INTEGER NOT NULL,
+    # CENÁRIO ATUAL - DIMENSÃO 5
+    atual_d5_a = db.Column(db.Integer, nullable=False)
+    atual_d5_b = db.Column(db.Integer, nullable=False)
+    atual_d5_c = db.Column(db.Integer, nullable=False)
+    atual_d5_d = db.Column(db.Integer, nullable=False)
 
-        foco_estrategico_atual_1 INTEGER NOT NULL,
-        foco_estrategico_atual_2 INTEGER NOT NULL,
-        foco_estrategico_atual_3 INTEGER NOT NULL,
-        foco_estrategico_atual_4 INTEGER NOT NULL,
-        foco_estrategico_ideal_1 INTEGER NOT NULL,
-        foco_estrategico_ideal_2 INTEGER NOT NULL,
-        foco_estrategico_ideal_3 INTEGER NOT NULL,
-        foco_estrategico_ideal_4 INTEGER NOT NULL,
+    # CENÁRIO ATUAL - DIMENSÃO 6
+    atual_d6_a = db.Column(db.Integer, nullable=False)
+    atual_d6_b = db.Column(db.Integer, nullable=False)
+    atual_d6_c = db.Column(db.Integer, nullable=False)
+    atual_d6_d = db.Column(db.Integer, nullable=False)
 
-        definicao_de_sucesso_atual_1 INTEGER NOT NULL,
-        definicao_de_sucesso_atual_2 INTEGER NOT NULL,
-        definicao_de_sucesso_atual_3 INTEGER NOT NULL,
-        definicao_de_sucesso_atual_4 INTEGER NOT NULL,
-        definicao_de_sucesso_ideal_1 INTEGER NOT NULL,
-        definicao_de_sucesso_ideal_2 INTEGER NOT NULL,
-        definicao_de_sucesso_ideal_3 INTEGER NOT NULL,
-        definicao_de_sucesso_ideal_4 INTEGER NOT NULL
-    );
-    """
+    # CENÁRIO IDEAL - DIMENSÃO 1
+    ideal_d1_a = db.Column(db.Integer, nullable=False)
+    ideal_d1_b = db.Column(db.Integer, nullable=False)
+    ideal_d1_c = db.Column(db.Integer, nullable=False)
+    ideal_d1_d = db.Column(db.Integer, nullable=False)
 
-    conn = get_connection()
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(sql)
-    finally:
-        conn.close()
+    # CENÁRIO IDEAL - DIMENSÃO 2
+    ideal_d2_a = db.Column(db.Integer, nullable=False)
+    ideal_d2_b = db.Column(db.Integer, nullable=False)
+    ideal_d2_c = db.Column(db.Integer, nullable=False)
+    ideal_d2_d = db.Column(db.Integer, nullable=False)
 
+    # CENÁRIO IDEAL - DIMENSÃO 3
+    ideal_d3_a = db.Column(db.Integer, nullable=False)
+    ideal_d3_b = db.Column(db.Integer, nullable=False)
+    ideal_d3_c = db.Column(db.Integer, nullable=False)
+    ideal_d3_d = db.Column(db.Integer, nullable=False)
 
-def build_resposta_data(form_data, consentimento="sim"):
-    """
-    Monta um dicionário com todos os campos do formulário
-    no mesmo formato da tabela do banco.
-    """
-    resposta = {
-        "consentimento": consentimento
-    }
+    # CENÁRIO IDEAL - DIMENSÃO 4
+    ideal_d4_a = db.Column(db.Integer, nullable=False)
+    ideal_d4_b = db.Column(db.Integer, nullable=False)
+    ideal_d4_c = db.Column(db.Integer, nullable=False)
+    ideal_d4_d = db.Column(db.Integer, nullable=False)
 
-    for dimension in DIMENSIONS:
-        dimension_id = dimension["id"]
+    # CENÁRIO IDEAL - DIMENSÃO 5
+    ideal_d5_a = db.Column(db.Integer, nullable=False)
+    ideal_d5_b = db.Column(db.Integer, nullable=False)
+    ideal_d5_c = db.Column(db.Integer, nullable=False)
+    ideal_d5_d = db.Column(db.Integer, nullable=False)
 
-        for indice in range(1, 5):
-            campo_atual = f"{dimension_id}_atual_{indice}"
-            campo_ideal = f"{dimension_id}_ideal_{indice}"
+    # CENÁRIO IDEAL - DIMENSÃO 6
+    ideal_d6_a = db.Column(db.Integer, nullable=False)
+    ideal_d6_b = db.Column(db.Integer, nullable=False)
+    ideal_d6_c = db.Column(db.Integer, nullable=False)
+    ideal_d6_d = db.Column(db.Integer, nullable=False)
 
-            resposta[campo_atual] = int(form_data.get(campo_atual, 0))
-            resposta[campo_ideal] = int(form_data.get(campo_ideal, 0))
-
-    return resposta
-
-
-def insert_resposta(resposta):
-    """
-    Salva uma resposta na tabela respostas_cvf.
-    Depois gera a ordem da resposta no formato R1, R2, R3...
-    Retorna o código gerado.
-    """
-    sql_insert = """
-    INSERT INTO respostas_cvf (
-        consentimento,
-
-        caracteristicas_dominantes_atual_1,
-        caracteristicas_dominantes_atual_2,
-        caracteristicas_dominantes_atual_3,
-        caracteristicas_dominantes_atual_4,
-        caracteristicas_dominantes_ideal_1,
-        caracteristicas_dominantes_ideal_2,
-        caracteristicas_dominantes_ideal_3,
-        caracteristicas_dominantes_ideal_4,
-
-        lideranca_atual_1,
-        lideranca_atual_2,
-        lideranca_atual_3,
-        lideranca_atual_4,
-        lideranca_ideal_1,
-        lideranca_ideal_2,
-        lideranca_ideal_3,
-        lideranca_ideal_4,
-
-        gestao_de_pessoas_atual_1,
-        gestao_de_pessoas_atual_2,
-        gestao_de_pessoas_atual_3,
-        gestao_de_pessoas_atual_4,
-        gestao_de_pessoas_ideal_1,
-        gestao_de_pessoas_ideal_2,
-        gestao_de_pessoas_ideal_3,
-        gestao_de_pessoas_ideal_4,
-
-        fator_de_coesao_atual_1,
-        fator_de_coesao_atual_2,
-        fator_de_coesao_atual_3,
-        fator_de_coesao_atual_4,
-        fator_de_coesao_ideal_1,
-        fator_de_coesao_ideal_2,
-        fator_de_coesao_ideal_3,
-        fator_de_coesao_ideal_4,
-
-        foco_estrategico_atual_1,
-        foco_estrategico_atual_2,
-        foco_estrategico_atual_3,
-        foco_estrategico_atual_4,
-        foco_estrategico_ideal_1,
-        foco_estrategico_ideal_2,
-        foco_estrategico_ideal_3,
-        foco_estrategico_ideal_4,
-
-        definicao_de_sucesso_atual_1,
-        definicao_de_sucesso_atual_2,
-        definicao_de_sucesso_atual_3,
-        definicao_de_sucesso_atual_4,
-        definicao_de_sucesso_ideal_1,
-        definicao_de_sucesso_ideal_2,
-        definicao_de_sucesso_ideal_3,
-        definicao_de_sucesso_ideal_4
-    )
-    VALUES (
-        %(consentimento)s,
-
-        %(caracteristicas_dominantes_atual_1)s,
-        %(caracteristicas_dominantes_atual_2)s,
-        %(caracteristicas_dominantes_atual_3)s,
-        %(caracteristicas_dominantes_atual_4)s,
-        %(caracteristicas_dominantes_ideal_1)s,
-        %(caracteristicas_dominantes_ideal_2)s,
-        %(caracteristicas_dominantes_ideal_3)s,
-        %(caracteristicas_dominantes_ideal_4)s,
-
-        %(lideranca_atual_1)s,
-        %(lideranca_atual_2)s,
-        %(lideranca_atual_3)s,
-        %(lideranca_atual_4)s,
-        %(lideranca_ideal_1)s,
-        %(lideranca_ideal_2)s,
-        %(lideranca_ideal_3)s,
-        %(lideranca_ideal_4)s,
-
-        %(gestao_de_pessoas_atual_1)s,
-        %(gestao_de_pessoas_atual_2)s,
-        %(gestao_de_pessoas_atual_3)s,
-        %(gestao_de_pessoas_atual_4)s,
-        %(gestao_de_pessoas_ideal_1)s,
-        %(gestao_de_pessoas_ideal_2)s,
-        %(gestao_de_pessoas_ideal_3)s,
-        %(gestao_de_pessoas_ideal_4)s,
-
-        %(fator_de_coesao_atual_1)s,
-        %(fator_de_coesao_atual_2)s,
-        %(fator_de_coesao_atual_3)s,
-        %(fator_de_coesao_atual_4)s,
-        %(fator_de_coesao_ideal_1)s,
-        %(fator_de_coesao_ideal_2)s,
-        %(fator_de_coesao_ideal_3)s,
-        %(fator_de_coesao_ideal_4)s,
-
-        %(foco_estrategico_atual_1)s,
-        %(foco_estrategico_atual_2)s,
-        %(foco_estrategico_atual_3)s,
-        %(foco_estrategico_atual_4)s,
-        %(foco_estrategico_ideal_1)s,
-        %(foco_estrategico_ideal_2)s,
-        %(foco_estrategico_ideal_3)s,
-        %(foco_estrategico_ideal_4)s,
-
-        %(definicao_de_sucesso_atual_1)s,
-        %(definicao_de_sucesso_atual_2)s,
-        %(definicao_de_sucesso_atual_3)s,
-        %(definicao_de_sucesso_atual_4)s,
-        %(definicao_de_sucesso_ideal_1)s,
-        %(definicao_de_sucesso_ideal_2)s,
-        %(definicao_de_sucesso_ideal_3)s,
-        %(definicao_de_sucesso_ideal_4)s
-    )
-    RETURNING id;
-    """
-
-    sql_update_ordem = """
-    UPDATE respostas_cvf
-    SET ordem_resposta = %s
-    WHERE id = %s;
-    """
-
-    conn = get_connection()
-
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(sql_insert, resposta)
-                novo_id = cur.fetchone()["id"]
-
-                ordem_resposta = f"R{novo_id}"
-
-                cur.execute(sql_update_ordem, (ordem_resposta, novo_id))
-
-                return ordem_resposta
-    finally:
-        conn.close()
+    def __repr__(self):
+        return f"<RespostaCVF {self.identificador}>"
