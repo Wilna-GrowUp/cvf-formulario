@@ -13,77 +13,71 @@ class RespostaCVF(db.Model):
     consentimento = db.Column(db.Boolean, nullable=False, default=False)
     data_envio = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    # CENÁRIO ATUAL - DIMENSÃO 1
-    atual_d1_a = db.Column(db.Integer, nullable=False)
-    atual_d1_b = db.Column(db.Integer, nullable=False)
-    atual_d1_c = db.Column(db.Integer, nullable=False)
-    atual_d1_d = db.Column(db.Integer, nullable=False)
+    # Características dominantes
+    caracteristicas_dominantes_atual_1 = db.Column(db.Integer, nullable=False)
+    caracteristicas_dominantes_atual_2 = db.Column(db.Integer, nullable=False)
+    caracteristicas_dominantes_atual_3 = db.Column(db.Integer, nullable=False)
+    caracteristicas_dominantes_atual_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO ATUAL - DIMENSÃO 2
-    atual_d2_a = db.Column(db.Integer, nullable=False)
-    atual_d2_b = db.Column(db.Integer, nullable=False)
-    atual_d2_c = db.Column(db.Integer, nullable=False)
-    atual_d2_d = db.Column(db.Integer, nullable=False)
+    caracteristicas_dominantes_ideal_1 = db.Column(db.Integer, nullable=False)
+    caracteristicas_dominantes_ideal_2 = db.Column(db.Integer, nullable=False)
+    caracteristicas_dominantes_ideal_3 = db.Column(db.Integer, nullable=False)
+    caracteristicas_dominantes_ideal_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO ATUAL - DIMENSÃO 3
-    atual_d3_a = db.Column(db.Integer, nullable=False)
-    atual_d3_b = db.Column(db.Integer, nullable=False)
-    atual_d3_c = db.Column(db.Integer, nullable=False)
-    atual_d3_d = db.Column(db.Integer, nullable=False)
+    # Liderança organizacional
+    lideranca_organizacional_atual_1 = db.Column(db.Integer, nullable=False)
+    lideranca_organizacional_atual_2 = db.Column(db.Integer, nullable=False)
+    lideranca_organizacional_atual_3 = db.Column(db.Integer, nullable=False)
+    lideranca_organizacional_atual_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO ATUAL - DIMENSÃO 4
-    atual_d4_a = db.Column(db.Integer, nullable=False)
-    atual_d4_b = db.Column(db.Integer, nullable=False)
-    atual_d4_c = db.Column(db.Integer, nullable=False)
-    atual_d4_d = db.Column(db.Integer, nullable=False)
+    lideranca_organizacional_ideal_1 = db.Column(db.Integer, nullable=False)
+    lideranca_organizacional_ideal_2 = db.Column(db.Integer, nullable=False)
+    lideranca_organizacional_ideal_3 = db.Column(db.Integer, nullable=False)
+    lideranca_organizacional_ideal_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO ATUAL - DIMENSÃO 5
-    atual_d5_a = db.Column(db.Integer, nullable=False)
-    atual_d5_b = db.Column(db.Integer, nullable=False)
-    atual_d5_c = db.Column(db.Integer, nullable=False)
-    atual_d5_d = db.Column(db.Integer, nullable=False)
+    # Gestão de pessoas
+    gestao_de_pessoas_atual_1 = db.Column(db.Integer, nullable=False)
+    gestao_de_pessoas_atual_2 = db.Column(db.Integer, nullable=False)
+    gestao_de_pessoas_atual_3 = db.Column(db.Integer, nullable=False)
+    gestao_de_pessoas_atual_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO ATUAL - DIMENSÃO 6
-    atual_d6_a = db.Column(db.Integer, nullable=False)
-    atual_d6_b = db.Column(db.Integer, nullable=False)
-    atual_d6_c = db.Column(db.Integer, nullable=False)
-    atual_d6_d = db.Column(db.Integer, nullable=False)
+    gestao_de_pessoas_ideal_1 = db.Column(db.Integer, nullable=False)
+    gestao_de_pessoas_ideal_2 = db.Column(db.Integer, nullable=False)
+    gestao_de_pessoas_ideal_3 = db.Column(db.Integer, nullable=False)
+    gestao_de_pessoas_ideal_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO IDEAL - DIMENSÃO 1
-    ideal_d1_a = db.Column(db.Integer, nullable=False)
-    ideal_d1_b = db.Column(db.Integer, nullable=False)
-    ideal_d1_c = db.Column(db.Integer, nullable=False)
-    ideal_d1_d = db.Column(db.Integer, nullable=False)
+    # Elemento de união organizacional
+    elemento_de_uniao_atual_1 = db.Column(db.Integer, nullable=False)
+    elemento_de_uniao_atual_2 = db.Column(db.Integer, nullable=False)
+    elemento_de_uniao_atual_3 = db.Column(db.Integer, nullable=False)
+    elemento_de_uniao_atual_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO IDEAL - DIMENSÃO 2
-    ideal_d2_a = db.Column(db.Integer, nullable=False)
-    ideal_d2_b = db.Column(db.Integer, nullable=False)
-    ideal_d2_c = db.Column(db.Integer, nullable=False)
-    ideal_d2_d = db.Column(db.Integer, nullable=False)
+    elemento_de_uniao_ideal_1 = db.Column(db.Integer, nullable=False)
+    elemento_de_uniao_ideal_2 = db.Column(db.Integer, nullable=False)
+    elemento_de_uniao_ideal_3 = db.Column(db.Integer, nullable=False)
+    elemento_de_uniao_ideal_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO IDEAL - DIMENSÃO 3
-    ideal_d3_a = db.Column(db.Integer, nullable=False)
-    ideal_d3_b = db.Column(db.Integer, nullable=False)
-    ideal_d3_c = db.Column(db.Integer, nullable=False)
-    ideal_d3_d = db.Column(db.Integer, nullable=False)
+    # Ênfase estratégica
+    enfase_estrategica_atual_1 = db.Column(db.Integer, nullable=False)
+    enfase_estrategica_atual_2 = db.Column(db.Integer, nullable=False)
+    enfase_estrategica_atual_3 = db.Column(db.Integer, nullable=False)
+    enfase_estrategica_atual_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO IDEAL - DIMENSÃO 4
-    ideal_d4_a = db.Column(db.Integer, nullable=False)
-    ideal_d4_b = db.Column(db.Integer, nullable=False)
-    ideal_d4_c = db.Column(db.Integer, nullable=False)
-    ideal_d4_d = db.Column(db.Integer, nullable=False)
+    enfase_estrategica_ideal_1 = db.Column(db.Integer, nullable=False)
+    enfase_estrategica_ideal_2 = db.Column(db.Integer, nullable=False)
+    enfase_estrategica_ideal_3 = db.Column(db.Integer, nullable=False)
+    enfase_estrategica_ideal_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO IDEAL - DIMENSÃO 5
-    ideal_d5_a = db.Column(db.Integer, nullable=False)
-    ideal_d5_b = db.Column(db.Integer, nullable=False)
-    ideal_d5_c = db.Column(db.Integer, nullable=False)
-    ideal_d5_d = db.Column(db.Integer, nullable=False)
+    # Critérios de sucesso
+    criterios_de_sucesso_atual_1 = db.Column(db.Integer, nullable=False)
+    criterios_de_sucesso_atual_2 = db.Column(db.Integer, nullable=False)
+    criterios_de_sucesso_atual_3 = db.Column(db.Integer, nullable=False)
+    criterios_de_sucesso_atual_4 = db.Column(db.Integer, nullable=False)
 
-    # CENÁRIO IDEAL - DIMENSÃO 6
-    ideal_d6_a = db.Column(db.Integer, nullable=False)
-    ideal_d6_b = db.Column(db.Integer, nullable=False)
-    ideal_d6_c = db.Column(db.Integer, nullable=False)
-    ideal_d6_d = db.Column(db.Integer, nullable=False)
+    criterios_de_sucesso_ideal_1 = db.Column(db.Integer, nullable=False)
+    criterios_de_sucesso_ideal_2 = db.Column(db.Integer, nullable=False)
+    criterios_de_sucesso_ideal_3 = db.Column(db.Integer, nullable=False)
+    criterios_de_sucesso_ideal_4 = db.Column(db.Integer, nullable=False)
 
     def __repr__(self):
         return f"<RespostaCVF {self.identificador}>"
