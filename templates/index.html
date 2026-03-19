@@ -1,1 +1,33 @@
+{% extends "base.html" %}
 
+{% block content %}
+    <form method="POST">
+        <div class="bloco">
+            <h1>{{ form_title }}</h1>
+            <p class="descricao">{{ form_description }}</p>
+        </div>
+
+        <div class="bloco">
+            <h2>Termo de consentimento</h2>
+
+            <p class="descricao">
+                Declaro que li as informações apresentadas e concordo em participar
+                voluntariamente desta pesquisa.
+            </p>
+
+            <div class="consentimento-opcoes">
+                <label>
+                    <input type="radio" name="consentimento" value="sim" required>
+                    Sim
+                </label>
+
+                <label>
+                    <input type="radio" name="consentimento" value="nao">
+                    Não
+                </label>
+            </div>
+
+            <button type="submit" class="botao">Iniciar pesquisa</button>
+        </div>
+    </form>
+{% endblock %}
