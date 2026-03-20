@@ -5,6 +5,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const mensagemResumo = document.getElementById("mensagem-resumo-erros");
     const botaoEnviar = document.getElementById("botao-enviar");
 
+    if (!formulario || grupos.length === 0) {
+        return;
+    }
+
     function converterParaNumero(valor) {
         if (valor === "" || valor === null) {
             return 0;
@@ -149,3 +153,4 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     validarFormulario();
+});
