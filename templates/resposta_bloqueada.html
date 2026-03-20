@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resposta já registrada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .box {
+            background: #f7f7f7;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .botao-area {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .botao {
+            display: inline-block;
+            padding: 10px 18px;
+            background: #222;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        .botao:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>Resposta já registrada</h1>
+
+        <p>
+    Este navegador já registrou uma participação nesta pesquisa.
+</p>
+
+<p>
+    Para garantir a qualidade dos resultados, cada participante pode responder apenas uma vez neste dispositivo.
+</p>
+
+<p>
+    Caso você ainda não tenha respondido ou precise de apoio para participar, entre em contato conosco pelo e-mail:
+    <strong>contato.growupgp@gmail.com</strong>
+</p>
+
+<p>
+    A pesquisa é totalmente anônima e nenhum dado pessoal é coletado.
+</p>
+
+        <div class="botao-area">
+            <a href="{{ url_for('index') }}" class="botao">Voltar ao início</a>
+        </div>
+    </div>
+</body>
+</html>

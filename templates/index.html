@@ -2,48 +2,45 @@
 
 {% block content %}
 <div class="bloco capa">
-    <h1>Diagnóstico de Cultura Organizacional - CVF</h1>
 
-    <p>
-        Esta pesquisa tem como objetivo identificar percepções sobre a cultura
-        organizacional atual e a cultura ideal da organização.
-    </p>
+    <div class="bloco">
+        <p>
+            A cultura organizacional é representada pelo conjunto de valores, práticas e formas de atuação
+            que orientam o funcionamento de uma empresa.
+        </p>
 
-    <p>
-        Antes de continuar, é necessário ler e aceitar o termo de consentimento.
-    </p>
+        <p>
+            O objetivo desta pesquisa compreender como a cultura organizacional é percebida pelos colaboradores
+            atualmente e como consideram que deveria ser a cultura ideal.
+        </p>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="erro-geral-formulario">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+        <p>
+            O questionário que segue é baseado no Modelo de Valores Competitivos (CVF), que considera quatro tipos de cultura:
+        </p>
 
-    <form method="POST">
-        <div class="bloco">
-            <h2>Termo de consentimento</h2>
+        <ul>
+            <li>Colaborativa</li>
+            <li>Inovadora</li>
+            <li>Orientada a Resultados</li>
+            <li>Estruturada</li>
+        </ul>
 
-            <p>
-                Declaro que li as informações da pesquisa e concordo em participar.
-            </p>
+        <p>
+            As informações coletadas apoiarão a identificação de oportunidades de melhoria e o desenvolvimento de ações
+            alinhadas à realidade da organização. Por isso, é essencial que as respostas sejam fornecidas de forma sincera
+            e transparente.
+        </p>
 
-            <label>
-                <input type="radio" name="consentimento" value="sim" required>
-                Sim, aceito participar
-            </label>
+        <h3>Confidencialidade</h3>
+        <p>
+            Esta pesquisa é anônima e não solicita nome, e-mail, CPF ou qualquer dado que permita a identificação dos participantes.
+            Para garantir a qualidade dos resultados, o sistema limita participações repetidas após o envio das respostas.
+        </p>
+    </div>
 
-            <br><br>
+    <div style="text-align: right; margin-top: 20px;">
+    <a href="{{ url_for('consentimento') }}" class="botao">Seguir</a>
+    </div>
 
-            <label>
-                <input type="radio" name="consentimento" value="nao" required>
-                Não aceito participar
-            </label>
-        </div>
-
-        <button type="submit" class="botao">Continuar para a pesquisa</button>
-    </form>
 </div>
-
 {% endblock %}

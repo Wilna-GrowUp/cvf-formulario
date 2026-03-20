@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bloco capa">
+
+    <p>
+        Antes de continuar, é necessário ler e aceitar o termo de consentimento.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="erro-geral-formulario">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <div class="bloco">
+            <h3>Termo de consentimento</h3>
+
+            <p>
+                Todas as informações serão tratadas com confidencialidade, em conformidade com a LGPD
+                (Lei nº 13.709/2018), sendo analisadas de forma consolidada, sem identificação individual.
+            </p>
+
+            <label>
+                <input type="radio" name="consentimento" value="sim" required>
+                Sim, aceito participar
+            </label>
+
+            <br><br>
+
+            <label>
+                <input type="radio" name="consentimento" value="nao" required>
+                Não aceito participar
+            </label>
+        </div>
+
+      <div style="text-align: right; margin-top: 20px;">
+    <button type="submit" class="botao">Responder a pesquisa</button>
+</div>
+    </form>
+
+</div>
+{% endblock %}

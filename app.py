@@ -1,7 +1,9 @@
 from functools import wraps
 from io import BytesIO
+import secrets
+import hashlib
 
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, make_response
 from openpyxl import Workbook
 
 from config import Config
@@ -16,6 +18,8 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
+
+COOKIE_NAME = "cvf_resposta_token"
 
 
 def converter_para_int(nome_campo):
@@ -76,6 +80,43 @@ def validar_somas(dados):
 
     return erros
 
+def gerar_token_anonimo():
+    """
+    Gera um código aleatório para marcar anonimamente o navegador.
+    """
+    return secrets.token_urlsafe(32)
+
+
+def gerar_hash_token(token):
+    """
+    Transforma o token em um hash para não salvar o valor original no banco.
+    """
+    base = f"{token}{app.config['SECRET_KEY']}"
+    return hashlib.sha256(base.encode("utf-8")).hexdigest()
+
+
+def navegador_ja_respondeu():
+    """
+    Verifica se este navegador já enviou uma resposta antes.
+    """
+    token = request.cookies.get(COOKIE_NAME)
+
+    if not token:
+        return False
+
+    token_hash = gerar_hash_token(token)
+    resposta_existente = RespostaCVF.query.filter_by(response_token_hash=token_hash).first()
+
+    return resposta_existente is not None
+
+
+def cookie_deve_ser_secure():
+    """
+    Em produção (Render com HTTPS), o cookie deve ser secure=True.
+    Localmente, deve ser False.
+    """
+    return not app.debug
+
 
 def admin_required(func):
     """
@@ -92,34 +133,45 @@ def admin_required(func):
     return wrapper
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def index():
     """
-    Tela inicial com consentimento.
+    Tela inicial de apresentação da pesquisa.
+    """
+    return render_template("index.html")
+
+
+@app.route("/consentimento", methods=["GET", "POST"])
+def consentimento():
+    """
+    Tela separada de consentimento.
     """
     if request.method == "POST":
-        consentimento = request.form.get("consentimento", "").strip().lower()
+        resposta_consentimento = request.form.get("consentimento", "").strip().lower()
 
-        if consentimento != "sim":
+        if resposta_consentimento != "sim":
             flash("Você precisa aceitar o termo de consentimento para continuar.", "erro")
-            return render_template("index.html")
+            return render_template("consentimento.html")
 
         session["consentimento_aceito"] = True
         return redirect(url_for("pesquisa"))
 
-    return render_template("index.html")
+    return render_template("consentimento.html")
 
-
+# código aqui
 @app.route("/pesquisa", methods=["GET", "POST"])
 def pesquisa():
-    """
-    Exibe a pesquisa e salva no banco quando o formulário é enviado.
-    """
+    if navegador_ja_respondeu():
+        return render_template("resposta_bloqueada.html")
+
     if not session.get("consentimento_aceito"):
         flash("Você precisa aceitar o termo de consentimento antes de responder a pesquisa.", "erro")
-        return redirect(url_for("index"))
+        return redirect(url_for("consentimento"))
 
     if request.method == "POST":
+        if navegador_ja_respondeu():
+            return render_template("resposta_bloqueada.html")
+
         dados = coletar_respostas()
         erros = validar_somas(dados)
 
@@ -132,8 +184,16 @@ def pesquisa():
                 dimensions=DIMENSIONS
             )
 
+        token = gerar_token_anonimo()
+        token_hash = gerar_hash_token(token)
+
+        while RespostaCVF.query.filter_by(response_token_hash=token_hash).first():
+            token = gerar_token_anonimo()
+            token_hash = gerar_hash_token(token)
+
         resposta = RespostaCVF(
             consentimento=True,
+            response_token_hash=token_hash,
 
             caracteristicas_dominantes_atual_1=dados["caracteristicas_dominantes_atual_1"],
             caracteristicas_dominantes_atual_2=dados["caracteristicas_dominantes_atual_2"],
@@ -199,14 +259,26 @@ def pesquisa():
 
         session.pop("consentimento_aceito", None)
 
-        return render_template("sucesso.html", identificador=resposta.identificador)
+        resposta_http = make_response(
+            render_template("sucesso.html", identificador=resposta.identificador)
+        )
+
+        resposta_http.set_cookie(
+            COOKIE_NAME,
+            token,
+            max_age=60 * 60 * 24 * 365,
+            httponly=True,
+            secure=cookie_deve_ser_secure(),
+            samesite="Lax"
+        )
+
+        return resposta_http
 
     return render_template(
         "pesquisa.html",
         form_instructions=FORM_INSTRUCTIONS,
         dimensions=DIMENSIONS
     )
-
 
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
@@ -312,6 +384,29 @@ def exportar_excel():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+
+@app.route("/criar-coluna")
+def criar_coluna():
+    from sqlalchemy import text
+
+    try:
+        db.session.execute(text("""
+            ALTER TABLE respostas_cvf
+            ADD COLUMN response_token_hash VARCHAR(64);
+        """))
+
+        db.session.execute(text("""
+            CREATE UNIQUE INDEX IF NOT EXISTS ix_respostas_cvf_response_token_hash
+            ON respostas_cvf (response_token_hash);
+        """))
+
+        db.session.commit()
+
+        return "Coluna criada com sucesso!"
+
+    except Exception as e:
+        db.session.rollback()
+        return f"Erro: {e}"
 
 if __name__ == "__main__":
     app.run(debug=True)

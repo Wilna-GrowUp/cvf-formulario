@@ -12,6 +12,7 @@ class RespostaCVF(db.Model):
 
     consentimento = db.Column(db.Boolean, nullable=False, default=False)
     data_envio = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    response_token_hash = db.Column(db.String(64), unique=True, nullable=True, index=True)
 
     # Características dominantes
     caracteristicas_dominantes_atual_1 = db.Column(db.Integer, nullable=False)
