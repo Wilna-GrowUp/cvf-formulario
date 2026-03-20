@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="erro-geral-formulario">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" id="form-pesquisa">
+        <div id="erro-geral-formulario" class="erro-geral-formulario">
+            A soma da pontuação do cenário atual e a soma da pontuação do cenário ideal, deve ser 100, para cada uma das dimensões.
+        </div>
+
+        <div class="bloco instrucoes">
+            <h1>Instruções</h1>
+
+            <ul>
+                {% for instruction in form_instructions %}
+                    <li>{{ instruction }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        {% for dimension in dimensions %}
+            <div class="bloco grupo-dimensao" data-dimension-id="{{ dimension.id }}">
+                <h2>{{ loop.index }}. {{ dimension.title }}</h2>
+
+                <table class="tabela-dimensao">
+                    <thead>
+                        <tr>
+                            <th>Afirmação</th>
+                            <th>Cenário atual</th>
+                            <th>Cenário ideal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for statement in dimension.statements %}
+                            <tr>
+                                <td>{{ statement }}</td>
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="{{ dimension.id }}_atual_{{ loop.index }}"
+                                        class="campo-atual"
+                                        min="0"
+                                        step="1"
+                                        value="0"
+                                        required
+                                    >
+                                </td>
+                                <td>
+                                    <input
+                                        type="number"
+                                        name="{{ dimension.id }}_ideal_{{ loop.index }}"
+                                        class="campo-ideal"
+                                        min="0"
+                                        step="1"
+                                        value="0"
+                                        required
+                                    >
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="resumo-somas">
+                    <div class="linha-soma">
+                        Soma do cenário atual:
+                        <span class="valor-soma-atual">0</span>
+                        <span class="status-soma-atual soma-erro">❌ Deve ser 100</span>
+                    </div>
+
+                    <div class="linha-soma">
+                        Soma do cenário ideal:
+                        <span class="valor-soma-ideal">0</span>
+                        <span class="status-soma-ideal soma-erro">❌ Deve ser 100</span>
+                    </div>
+                </div>
+
+                <div class="erro-dimensao"></div>
+            </div>
+        {% endfor %}
+
+        <div id="mensagem-resumo-erros" class="erro-geral-formulario" style="display: none;"></div>
+
+        <button type="submit" class="botao" id="botao-enviar">Enviar respostas</button>
+    </form>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{{ url_for('static', filename='js/form.js') }}"></script>
+{% endblock %}
