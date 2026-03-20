@@ -1,7 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from functools import wraps
+from io import BytesIO
+
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
+from openpyxl import Workbook
+
 from config import Config
 from models import db, RespostaCVF
 from forms_data import FORM_INSTRUCTIONS, DIMENSIONS
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -69,6 +75,21 @@ def validar_somas(dados):
             erros.append(f"{titulo} - cenário ideal soma {soma_ideal} e deve ser 100")
 
     return erros
+
+
+def admin_required(func):
+    """
+    Protege rotas administrativas.
+    Só permite acesso se o admin estiver logado.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not session.get("admin_logado"):
+            flash("Faça login como administrador para acessar esta área.", "erro")
+            return redirect(url_for("admin_login"))
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -187,5 +208,100 @@ def pesquisa():
     )
 
 
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    """
+    Login simples do administrador.
+    """
+    if request.method == "POST":
+        senha = request.form.get("senha", "").strip()
+
+        if senha == app.config["ADMIN_PASSWORD"]:
+            session["admin_logado"] = True
+            flash("Login administrativo realizado com sucesso.", "sucesso")
+            return redirect(url_for("admin_painel"))
+
+        flash("Senha de administrador incorreta.", "erro")
+
+    return render_template("admin_login.html")
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    """
+    Encerra a sessão do administrador.
+    """
+    session.pop("admin_logado", None)
+    flash("Logout administrativo realizado com sucesso.", "sucesso")
+    return redirect(url_for("admin_login"))
+
+
+@app.route("/admin")
+@admin_required
+def admin_painel():
+    """
+    Painel simples do administrador.
+    """
+    total_respostas = RespostaCVF.query.count()
+    return render_template("admin_painel.html", total_respostas=total_respostas)
+
+
+@app.route("/admin/exportar-excel")
+@admin_required
+def exportar_excel():
+    """
+    Exporta todas as respostas para um arquivo Excel.
+    """
+    respostas = RespostaCVF.query.all()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Respostas CVF"
+
+    colunas = ["ID", "Identificador", "Consentimento", "Data"]
+
+    for dimension in DIMENSIONS:
+        dimension_id = dimension["id"]
+
+        for i in range(1, 5):
+            colunas.append(f"{dimension_id}_atual_{i}")
+
+        for i in range(1, 5):
+            colunas.append(f"{dimension_id}_ideal_{i}")
+
+    ws.append(colunas)
+
+    for resposta in respostas:
+        linha = [
+            resposta.id,
+            resposta.identificador,
+            resposta.consentimento,
+            resposta.data_envio.strftime("%Y-%m-%d %H:%M:%S")
+        ]
+
+        for dimension in DIMENSIONS:
+            dimension_id = dimension["id"]
+
+            for i in range(1, 5):
+                linha.append(getattr(resposta, f"{dimension_id}_atual_{i}"))
+
+            for i in range(1, 5):
+                linha.append(getattr(resposta, f"{dimension_id}_ideal_{i}"))
+
+        ws.append(linha)
+
+    arquivo = BytesIO()
+    wb.save(arquivo)
+    arquivo.seek(0)
+
+    return send_file(
+        arquivo,
+        as_attachment=True,
+        download_name="respostas_cvf.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
 if __name__ == "__main__":
     app.run(debug=True)
+
