@@ -1,6 +1,15 @@
+<<<<<<< HEAD
 Flask
 Flask-SQLAlchemy
 gunicorn
 psycopg2-binary
 python-dotenv
 openpyxl==3.1.2
+=======
+Flask
+Flask-SQLAlchemy
+gunicorn
+psycopg2-binary
+python-dotenv
+openpyxl==3.1.2
+>>>>>>> 4c591baf6ce64bd7edfeb8feb4bbcbfea24a9484

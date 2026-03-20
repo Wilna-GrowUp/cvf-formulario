@@ -149,4 +149,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     validarFormulario();
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> 4c591baf6ce64bd7edfeb8feb4bbcbfea24a9484
