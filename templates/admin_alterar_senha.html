@@ -2,21 +2,16 @@
 
 {% block content %}
 <div class="bloco" style="max-width: 520px; margin: 0 auto;">
-    <h1>Recuperar acesso</h1>
+    <h1>Alterar senha</h1>
     <p class="descricao">
-        Informe o usuário, o código de recuperação e defina uma nova senha.
+        Informe sua senha atual e defina uma nova senha.
     </p>
 
     <form method="POST">
 
         <div style="margin-bottom: 16px;">
-            <label>Usuário</label>
-            <input type="text" name="username" required>
-        </div>
-
-        <div style="margin-bottom: 16px;">
-            <label>Código de recuperação</label>
-            <input type="password" name="reset_code" required>
+            <label>Senha atual</label>
+            <input type="password" name="senha_atual" required>
         </div>
 
         <div style="margin-bottom: 16px;">
@@ -30,13 +25,13 @@
         </div>
 
         <div style="display: flex; justify-content: flex-end;">
-            <button class="botao">Redefinir senha</button>
+            <button class="botao">Salvar nova senha</button>
         </div>
 
     </form>
 
     <div style="margin-top: 16px;">
-        <a href="{{ url_for('admin_login') }}">Voltar para o login</a>
+        <a href="{{ url_for('admin_painel') }}">Voltar ao painel</a>
     </div>
 </div>
 {% endblock %}
