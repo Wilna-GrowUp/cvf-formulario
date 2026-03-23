@@ -1,8 +1,20 @@
-{% extends "base.html" %}
-
 {% block content %}
 <div class="bloco">
     <h1>Painel do administrador</h1>
+
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 24px 0;">
+        <a href="{{ url_for('admin_alterar_senha') }}" class="botao">
+            Alterar senha
+        </a>
+
+        <a href="{{ url_for('exportar_excel') }}" class="botao">
+            Exportar respostas para Excel
+        </a>
+
+        <a href="{{ url_for('admin_logout') }}" class="botao" style="background-color: #b91c1c;">
+            Sair
+        </a>
+    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -13,12 +25,6 @@
     {% endwith %}
 
     <p><strong>Total de respostas salvas:</strong> {{ total_respostas }}</p>
-
-    <p>
-        <a href="{{ url_for('exportar_excel') }}" class="botao">
-            Exportar respostas para Excel
-        </a>
-    </p>
 
     <hr style="margin: 30px 0;">
 
@@ -77,12 +83,5 @@
     {% else %}
         <p>Ainda não há empresas cadastradas.</p>
     {% endif %}
-
-    <p style="margin-top: 30px;">
-        <a href="{{ url_for('admin_logout') }}" class="botao">
-            Sair da área administrativa
-        </a>
-    </p>
 </div>
 {% endblock %}
-
