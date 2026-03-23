@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bloco">
+    <h1>Identificação da empresa</h1>
+
+    <p>Informe o código da empresa para acessar a pesquisa.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="erro-geral-formulario">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <div style="margin-bottom: 20px;">
+            <label for="codigo"><strong>Código da empresa</strong></label><br>
+            <input type="text" id="codigo" name="codigo" required style="padding: 10px; width: 250px;">
+        </div>
+
+        <button type="submit" class="botao">Continuar</button>
+    </form>
+</div>
+{% endblock %}

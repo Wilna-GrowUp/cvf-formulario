@@ -20,7 +20,65 @@
         </a>
     </p>
 
-    <p>
+    <hr style="margin: 30px 0;">
+
+    <h2>Gerenciar empresas / pesquisas</h2>
+
+    <form method="POST">
+        <div style="margin-bottom: 15px;">
+            <label for="nome_empresa"><strong>Nome da empresa</strong></label><br>
+            <input type="text" id="nome_empresa" name="nome_empresa" required style="width: 100%; max-width: 500px; padding: 10px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="data_inicio"><strong>Data de início da pesquisa</strong></label><br>
+            <input type="date" id="data_inicio" name="data_inicio" required style="padding: 10px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label for="data_fim"><strong>Data de encerramento da pesquisa</strong></label><br>
+            <input type="date" id="data_fim" name="data_fim" required style="padding: 10px;">
+        </div>
+
+        <p>
+            <button type="submit" class="botao">Gerar código e salvar</button>
+        </p>
+    </form>
+
+    <hr style="margin: 30px 0;">
+
+    <h2>Empresas cadastradas</h2>
+
+    {% if empresas %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 10px; border-bottom: 1px solid #ccc;">Nome da empresa</th>
+                        <th style="text-align: left; padding: 10px; border-bottom: 1px solid #ccc;">Código</th>
+                        <th style="text-align: left; padding: 10px; border-bottom: 1px solid #ccc;">Início</th>
+                        <th style="text-align: left; padding: 10px; border-bottom: 1px solid #ccc;">Encerramento</th>
+                        <th style="text-align: left; padding: 10px; border-bottom: 1px solid #ccc;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for empresa in empresas %}
+                    <tr>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ empresa.nome }}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ empresa.codigo }}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ empresa.data_inicio.strftime("%d/%m/%Y") }}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ empresa.data_fim.strftime("%d/%m/%Y") }}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ empresa.status }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>Ainda não há empresas cadastradas.</p>
+    {% endif %}
+
+    <p style="margin-top: 30px;">
         <a href="{{ url_for('admin_logout') }}" class="botao">
             Sair da área administrativa
         </a>
@@ -28,10 +86,3 @@
 </div>
 {% endblock %}
 
-{% block extra_scripts %}
-<script>
-    window.addEventListener("beforeunload", function () {
-        navigator.sendBeacon("{{ url_for('admin_logout_beacon') }}");
-    });
-</script>
-{% endblock %}

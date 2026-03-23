@@ -9,6 +9,7 @@ class RespostaCVF(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     identificador = db.Column(db.String(20), unique=True, nullable=True)
+    cod_emp = db.Column(db.String(20), nullable=True)
 
     consentimento = db.Column(db.Boolean, nullable=False, default=False)
     data_envio = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -82,3 +83,26 @@ class RespostaCVF(db.Model):
 
     def __repr__(self):
         return f"<RespostaCVF {self.identificador}>"
+
+class Empresa(db.Model):
+    __tablename__ = "empresas"
+
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(150), nullable=False)
+    codigo = db.Column(db.String(20), unique=True, nullable=False)
+    data_inicio = db.Column(db.Date, nullable=False)
+    data_fim = db.Column(db.Date, nullable=False)
+    data_criacao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    @property
+    def status(self):
+        hoje = datetime.utcnow().date()
+
+        if hoje < self.data_inicio:
+            return "Não iniciada"
+        elif hoje > self.data_fim:
+            return "Encerrada"
+        return "Ativa"
+
+    def __repr__(self):
+        return f"<Empresa {self.nome}>"

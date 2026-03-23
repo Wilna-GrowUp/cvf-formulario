@@ -3,11 +3,14 @@ from io import BytesIO
 import secrets
 import hashlib
 
+from datetime import datetime, date, timezone
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, make_response
 from openpyxl import Workbook
+from sqlalchemy import func
+from zoneinfo import ZoneInfo
 
 from config import Config
-from models import db, RespostaCVF
+from models import db, RespostaCVF, Empresa
 from forms_data import FORM_INSTRUCTIONS, DIMENSIONS
 
 
@@ -55,6 +58,37 @@ def coletar_respostas():
             dados[campo_ideal] = converter_para_int(campo_ideal)
 
     return dados
+
+def cookie_deve_ser_secure():
+    """
+    Em produção (Render com HTTPS), o cookie deve ser secure=True.
+    Localmente, deve ser False.
+    """
+    return not app.debug
+
+def converter_utc_para_brasil(data_utc):
+    """
+    Recebe uma data UTC salva no banco e converte para o horário de São Paulo.
+    """
+    if not data_utc:
+        return None
+
+    # Se a data veio sem informação de fuso, assumimos que ela está em UTC
+    data_utc = data_utc.replace(tzinfo=timezone.utc)
+
+    return data_utc.astimezone(ZoneInfo("America/Sao_Paulo"))
+
+
+def formatar_data_hora_brasil(data_utc):
+    """
+    Converte a data UTC para horário de São Paulo e devolve em texto.
+    """
+    data_brasil = converter_utc_para_brasil(data_utc)
+
+    if not data_brasil:
+        return ""
+
+    return data_brasil.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def validar_somas(dados):
@@ -110,13 +144,43 @@ def navegador_ja_respondeu():
     return resposta_existente is not None
 
 
-def cookie_deve_ser_secure():
+def normalizar_nome_empresa(nome_empresa):
     """
-    Em produção (Render com HTTPS), o cookie deve ser secure=True.
-    Localmente, deve ser False.
+    Padroniza o nome para comparação.
+    Exemplo: remove espaços extras e deixa tudo minúsculo.
     """
-    return not app.debug
+    return " ".join(nome_empresa.strip().lower().split())
 
+
+def gerar_iniciais_empresa(nome_empresa):
+    """
+    Gera as iniciais da empresa com base nas palavras do nome.
+    Exemplo: GrowUp Teste -> GT
+    """
+    palavras = [palavra for palavra in nome_empresa.strip().split() if palavra]
+
+    if not palavras:
+        return "EM"
+
+    iniciais = "".join(palavra[0].upper() for palavra in palavras[:2])
+
+    if len(iniciais) == 1:
+        iniciais += "X"
+
+    return iniciais
+
+
+def gerar_codigo_empresa(nome_empresa, data_cadastro, quantidade_existente):
+    """
+    Gera o código no formato:
+    INICIAIS-AAAAMMDDNN
+    Exemplo: GT-2026031901
+    """
+    iniciais = gerar_iniciais_empresa(nome_empresa)
+    data_formatada = data_cadastro.strftime("%Y%m%d")
+    sequencial = quantidade_existente + 1
+
+    return f"{iniciais}-{data_formatada}{sequencial:02d}"
 
 def admin_required(func):
     """
@@ -154,13 +218,61 @@ def consentimento():
             return render_template("consentimento.html")
 
         session["consentimento_aceito"] = True
-        return redirect(url_for("pesquisa"))
+        return redirect(url_for("codigo_empresa"))
 
     return render_template("consentimento.html")
+
+@app.route("/codigo", methods=["GET", "POST"])
+def codigo_empresa():
+    """
+    Tela onde o respondente informa o código da empresa.
+    """
+    if not session.get("consentimento_aceito"):
+        flash("Você precisa aceitar o termo antes de continuar.", "erro")
+        return redirect(url_for("consentimento"))
+
+    if request.method == "POST":
+        codigo = request.form.get("codigo", "").strip()
+
+        if not codigo:
+            flash("Informe o código da empresa.", "erro")
+            return render_template("codigo_empresa.html")
+
+        empresa = Empresa.query.filter_by(codigo=codigo).first()
+
+        if not empresa:
+            flash("Código da empresa inválido.", "erro")
+            return render_template("codigo_empresa.html")
+
+        hoje = date.today()
+
+        if hoje < empresa.data_inicio:
+            flash(
+                f"Esta pesquisa estará disponível a partir de {empresa.data_inicio.strftime('%d/%m/%Y')}.",
+                "erro"
+            )
+            return render_template("codigo_empresa.html")
+
+        if hoje > empresa.data_fim:
+            flash(
+                f"O período desta pesquisa foi encerrado em {empresa.data_fim.strftime('%d/%m/%Y')}.",
+                "erro"
+            )
+            return render_template("codigo_empresa.html")
+
+        # salva o código na sessão
+        session["cod_emp"] = empresa.codigo
+
+        return redirect(url_for("pesquisa"))
+
+    return render_template("codigo_empresa.html")
 
 # código aqui
 @app.route("/pesquisa", methods=["GET", "POST"])
 def pesquisa():
+    if not session.get("cod_emp"):
+        flash("Informe o código da empresa para acessar a pesquisa.", "erro")
+        return redirect(url_for("codigo_empresa"))
     if navegador_ja_respondeu():
         return render_template("resposta_bloqueada.html")
 
@@ -184,6 +296,7 @@ def pesquisa():
                 dimensions=DIMENSIONS
             )
 
+
         token = gerar_token_anonimo()
         token_hash = gerar_hash_token(token)
 
@@ -192,6 +305,7 @@ def pesquisa():
             token_hash = gerar_hash_token(token)
 
         resposta = RespostaCVF(
+            cod_emp=session.get("cod_emp"),
             consentimento=True,
             response_token_hash=token_hash,
 
@@ -319,15 +433,98 @@ def admin_logout_beacon():
     return ("", 204)
 
 
-@app.route("/admin")
+@app.route("/admin", methods=["GET", "POST"])
 @admin_required
 def admin_painel():
     """
-    Painel simples do administrador.
+    Painel do administrador com resumo e cadastro de empresas/pesquisas.
     """
-    total_respostas = RespostaCVF.query.count()
-    return render_template("admin_painel.html", total_respostas=total_respostas)
+    if request.method == "POST":
+        nome = request.form.get("nome_empresa", "").strip()
+        data_inicio_str = request.form.get("data_inicio", "").strip()
+        data_fim_str = request.form.get("data_fim", "").strip()
 
+        if not nome or not data_inicio_str or not data_fim_str:
+            flash("Preencha nome da empresa, data de início e data de encerramento.", "erro")
+            return redirect(url_for("admin_painel"))
+
+        try:
+            data_inicio = datetime.strptime(data_inicio_str, "%Y-%m-%d").date()
+            data_fim = datetime.strptime(data_fim_str, "%Y-%m-%d").date()
+        except ValueError:
+            flash("As datas informadas são inválidas.", "erro")
+            return redirect(url_for("admin_painel"))
+
+        data_cadastro = date.today()
+
+        if data_inicio < data_cadastro:
+            flash("A data de início da pesquisa não pode ser anterior à data do cadastro.", "erro")
+            return redirect(url_for("admin_painel"))
+
+        if data_fim < data_inicio:
+            flash("A data de encerramento não pode ser menor que a data de início.", "erro")
+            return redirect(url_for("admin_painel"))
+
+        nome_normalizado = normalizar_nome_empresa(nome)
+
+        empresas_mesmo_nome = Empresa.query.filter(
+            func.lower(Empresa.nome) == nome_normalizado
+        ).order_by(Empresa.data_inicio.asc()).all()
+
+        # REGRA 1:
+        # mesma empresa + mesma data de início = atualiza data final e mantém o código
+        for empresa_existente in empresas_mesmo_nome:
+            nome_existente_normalizado = normalizar_nome_empresa(empresa_existente.nome)
+
+            if nome_existente_normalizado == nome_normalizado and empresa_existente.data_inicio == data_inicio:
+                empresa_existente.data_fim = data_fim
+                db.session.commit()
+
+                flash(
+                    f"Empresa já cadastrada com esta data de início. A data de encerramento foi atualizada e o código {empresa_existente.codigo} foi mantido.",
+                    "sucesso"
+                )
+                return redirect(url_for("admin_painel"))
+
+        # REGRA 2:
+        # nova data de início não pode cair dentro de um período já existente da mesma empresa
+        for empresa_existente in empresas_mesmo_nome:
+            nome_existente_normalizado = normalizar_nome_empresa(empresa_existente.nome)
+
+            if nome_existente_normalizado == nome_normalizado:
+                if empresa_existente.data_inicio <= data_inicio <= empresa_existente.data_fim:
+                    flash(
+                        "Já existe uma pesquisa cadastrada para esta empresa com período que cobre a data de início informada. Cadastre uma nova pesquisa com início posterior ao encerramento da anterior.",
+                        "erro"
+                    )
+                    return redirect(url_for("admin_painel"))
+
+        # REGRA 3:
+        # se chegou até aqui, é uma nova pesquisa válida para a mesma empresa
+        quantidade_existente = len(empresas_mesmo_nome)
+        codigo = gerar_codigo_empresa(nome, data_cadastro, quantidade_existente)
+
+        nova_empresa = Empresa(
+            nome=nome,
+            codigo=codigo,
+            data_inicio=data_inicio,
+            data_fim=data_fim
+        )
+
+        db.session.add(nova_empresa)
+        db.session.commit()
+
+        flash(f"Empresa/pesquisa cadastrada com sucesso. Código gerado: {codigo}", "sucesso")
+        return redirect(url_for("admin_painel"))
+
+    total_respostas = RespostaCVF.query.count()
+    empresas = Empresa.query.order_by(Empresa.id.desc()).all()
+
+    return render_template(
+        "admin_painel.html",
+        total_respostas=total_respostas,
+        empresas=empresas
+    )
 
 @app.route("/admin/exportar-excel")
 @admin_required
@@ -341,7 +538,7 @@ def exportar_excel():
     ws = wb.active
     ws.title = "Respostas CVF"
 
-    colunas = ["ID", "Identificador", "Consentimento", "Data"]
+    colunas = ["cod_emp", "ID", "Consentimento", "Data"]
 
     for dimension in DIMENSIONS:
         dimension_id = dimension["id"]
@@ -356,10 +553,10 @@ def exportar_excel():
 
     for resposta in respostas:
         linha = [
+            resposta.cod_emp,
             resposta.id,
-            resposta.identificador,
             resposta.consentimento,
-            resposta.data_envio.strftime("%Y-%m-%d %H:%M:%S")
+            formatar_data_hora_brasil(resposta.data_envio)
         ]
 
         for dimension in DIMENSIONS:
