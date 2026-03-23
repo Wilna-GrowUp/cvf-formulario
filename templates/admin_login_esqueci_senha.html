@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Esqueci a senha</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 480px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 18px;
+            padding: 10px 16px;
+            cursor: pointer;
+        }
+        .flash {
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            background: #f5f5f5;
+        }
+        .info {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Recuperar acesso</h1>
+
+    <div class="info">
+        Use o usuário administrador, o código secreto de recuperação e escolha uma nova senha.
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <label for="username">Usuário administrador</label>
+        <input type="text" id="username" name="username" required>
+
+        <label for="reset_code">Código de recuperação</label>
+        <input type="password" id="reset_code" name="reset_code" required>
+
+        <label for="nova_senha">Nova senha</label>
+        <input type="password" id="nova_senha" name="nova_senha" required>
+
+        <label for="confirmar_senha">Confirmar nova senha</label>
+        <input type="password" id="confirmar_senha" name="confirmar_senha" required>
+
+        <button type="submit">Redefinir senha</button>
+    </form>
+
+    <p style="margin-top: 16px;">
+        <a href="{{ url_for('admin_login') }}">Voltar para o login</a>
+    </p>
+</body>
+</html>

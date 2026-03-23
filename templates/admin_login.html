@@ -1,25 +1,79 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Administrativo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 420px;
+            margin: 40px auto;
+            padding: 20px;
+        }
 
-{% block content %}
-<div class="bloco">
-    <h1>Login do administrador</h1>
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 18px;
+            padding: 10px 16px;
+            cursor: pointer;
+        }
+
+        .links {
+            margin-top: 16px;
+        }
+
+        .links a {
+            display: inline-block;
+            margin-right: 12px;
+        }
+
+        .flash {
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Login administrativo</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="erro-geral-formulario">{{ message }}</div>
+                <div class="flash">{{ message }}</div>
             {% endfor %}
         {% endif %}
     {% endwith %}
 
     <form method="POST">
-        <label for="senha"><strong>Senha:</strong></label>
-        <br><br>
-        <input type="password" name="senha" id="senha" required>
-        <br><br>
+        <label for="username">Usuário</label>
+        <input type="text" id="username" name="username" required>
 
-        <button type="submit" class="botao">Entrar</button>
+        <label for="password">Senha</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Entrar</button>
     </form>
-</div>
 
-{% endblock %}
+    <div class="links">
+        <a href="{{ url_for('admin_esqueci_senha') }}">Esqueci a senha</a>
+    </div>
+</body>
+</html>

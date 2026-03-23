@@ -10,7 +10,7 @@ from sqlalchemy import func, text, inspect
 from zoneinfo import ZoneInfo
 
 from config import Config
-from models import db, RespostaCVF, Empresa
+from models import db, RespostaCVF, Empresa, Admin
 from forms_data import FORM_INSTRUCTIONS, DIMENSIONS
 
 
@@ -19,6 +19,23 @@ app.config.from_object(Config)
 
 db.init_app(app)
 
+def garantir_admin_inicial():
+    """
+    Cria o primeiro administrador, se ainda não existir.
+    """
+    username = app.config["ADMIN_USERNAME"]
+    senha_inicial = app.config["ADMIN_PASSWORD_INICIAL"]
+
+    admin = Admin.query.filter_by(username=username).first()
+
+    if not admin:
+        admin = Admin(username=username)
+        admin.set_password(senha_inicial)
+        db.session.add(admin)
+        db.session.commit()
+        print(f"Admin inicial criado com usuário: {username}")
+    else:
+        print(f"Admin já existe: {username}")
 
 def garantir_colunas_producao():
     """
@@ -49,6 +66,7 @@ def garantir_colunas_producao():
 with app.app_context():
     db.create_all()
     garantir_colunas_producao()
+    garantir_admin_inicial()
 
 COOKIE_NAME = "cvf_resposta_token"
 
@@ -455,20 +473,100 @@ def pesquisa():
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     """
-    Login simples do administrador.
+    Login do administrador com usuário e senha.
     """
     if request.method == "POST":
-        senha = request.form.get("senha", "").strip()
+        username = request.form.get("username", "").strip()
+        senha = request.form.get("password", "")
 
-        if senha == app.config["ADMIN_PASSWORD"]:
+        admin = Admin.query.filter_by(username=username).first()
+
+        if admin and admin.check_password(senha):
             session.permanent = False
             session["admin_logado"] = True
+            session["admin_id"] = admin.id
+            session["admin_username"] = admin.username
             flash("Login administrativo realizado com sucesso.", "sucesso")
             return redirect(url_for("admin_painel"))
 
-        flash("Senha de administrador incorreta.", "erro")
+        flash("Usuário ou senha inválidos.", "erro")
 
     return render_template("admin_login.html")
+
+@app.route("/admin/esqueci-senha", methods=["GET", "POST"])
+def admin_esqueci_senha():
+    """
+    Permite redefinir a senha do administrador usando um código secreto.
+    """
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        reset_code = request.form.get("reset_code", "").strip()
+        nova_senha = request.form.get("nova_senha", "")
+        confirmar_senha = request.form.get("confirmar_senha", "")
+
+        admin = Admin.query.filter_by(username=username).first()
+
+        if not admin:
+            flash("Usuário administrador não encontrado.", "erro")
+            return render_template("admin_esqueci_senha.html")
+
+        if reset_code != app.config["ADMIN_RESET_CODE"]:
+            flash("Código de recuperação inválido.", "erro")
+            return render_template("admin_esqueci_senha.html")
+
+        if len(nova_senha) < 6:
+            flash("A nova senha deve ter pelo menos 6 caracteres.", "erro")
+            return render_template("admin_esqueci_senha.html")
+
+        if nova_senha != confirmar_senha:
+            flash("A confirmação da senha não confere.", "erro")
+            return render_template("admin_esqueci_senha.html")
+
+        admin.set_password(nova_senha)
+        db.session.commit()
+
+        flash("Senha redefinida com sucesso. Faça login com a nova senha.", "sucesso")
+        return redirect(url_for("admin_login"))
+
+    return render_template("admin_esqueci_senha.html")
+
+@app.route("/admin/alterar-senha", methods=["GET", "POST"])
+@admin_required
+def admin_alterar_senha():
+    """
+    Permite ao administrador logado alterar a própria senha.
+    """
+    admin_id = session.get("admin_id")
+    admin = Admin.query.get(admin_id)
+
+    if not admin:
+        flash("Administrador não encontrado.", "erro")
+        return redirect(url_for("admin_login"))
+
+    if request.method == "POST":
+        senha_atual = request.form.get("senha_atual", "")
+        nova_senha = request.form.get("nova_senha", "")
+        confirmar_senha = request.form.get("confirmar_senha", "")
+
+        if not admin.check_password(senha_atual):
+            flash("A senha atual está incorreta.", "erro")
+            return render_template("admin_alterar_senha.html")
+
+        if len(nova_senha) < 6:
+            flash("A nova senha deve ter pelo menos 6 caracteres.", "erro")
+            return render_template("admin_alterar_senha.html")
+
+        if nova_senha != confirmar_senha:
+            flash("A confirmação da nova senha não confere.", "erro")
+            return render_template("admin_alterar_senha.html")
+
+        admin.set_password(nova_senha)
+        db.session.commit()
+
+        flash("Senha alterada com sucesso.", "sucesso")
+        return redirect(url_for("admin_painel"))
+
+    return render_template("admin_alterar_senha.html")
 
 
 @app.route("/admin/logout")
@@ -477,6 +575,8 @@ def admin_logout():
     Encerra a sessão do administrador.
     """
     session.pop("admin_logado", None)
+    session.pop("admin_id", None)
+    session.pop("admin_username", None)
     flash("Logout administrativo realizado com sucesso.", "sucesso")
     return redirect(url_for("admin_login"))
 
@@ -488,6 +588,8 @@ def admin_logout_beacon():
     quando a guia/janela for fechada.
     """
     session.pop("admin_logado", None)
+    session.pop("admin_id", None)
+    session.pop("admin_username", None)
     return ("", 204)
 
 
