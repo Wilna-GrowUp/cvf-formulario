@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard CVF{% endblock %}
+
+{% block content %}
+<div class="bloco">
+    <h1>Dashboard CVF</h1>
+    <p>Resumo geral das respostas já enviadas.</p>
+
+    {% if empresa_selecionada %}
+        <p>
+            <strong>Empresa filtrada:</strong>
+            {{ empresa_selecionada.nome }} ({{ empresa_selecionada.codigo }})
+        </p>
+    {% else %}
+        <p><strong>Exibindo:</strong> todas as empresas</p>
+    {% endif %}
+</div>
+
+<div style="display: flex; gap: 20px; flex-wrap: wrap;">
+    <div class="bloco" style="flex: 1; min-width: 300px;">
+        <h2>Filtrar por empresa</h2>
+
+        <form method="GET" action="{{ url_for('admin_dashboard') }}">
+            <div style="margin-bottom: 15px;">
+                <label for="cod_emp"><strong>Escolha a empresa:</strong></label>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <select name="cod_emp" id="cod_emp" style="padding: 10px; width: 100%;">
+                    <option value="">Todas as empresas</option>
+                    {% for empresa in empresas %}
+                        <option value="{{ empresa.codigo }}" {% if codigo_empresa_selecionado == empresa.codigo %}selected{% endif %}>
+                            {{ empresa.nome }} ({{ empresa.codigo }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="submit" class="botao">Aplicar filtro</button>
+                <a href="{{ url_for('admin_dashboard') }}" class="botao">Limpar filtro</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="bloco" style="flex: 1; min-width: 300px;">
+        <h2>Visão geral</h2>
+        <p><strong>Total de respostas consideradas:</strong></p>
+        <p style="font-size: 28px; margin-top: 10px;">{{ total_respostas }}</p>
+    </div>
+</div>
+
+<div class="bloco">
+    <h2>Gráfico radar</h2>
+    <p>Comparação entre os perfis culturais dos cenários Atual e Ideal.</p>
+
+    <div style="max-width: 700px; margin: 0 auto;">
+        <canvas id="graficoRadarCVF"></canvas>
+    </div>
+</div>
+
+<div class="bloco">
+    <h2>Cenário Atual</h2>
+
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="text-align: left; padding: 10px; border-bottom: 1px solid #ccc;">Perfil</th>
+                <th style="text-align: left; padding: 10px; border-bottom: 1px solid #ccc;">Média</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Clã</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ medias_atual.cla }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Adocracia</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ medias_atual.adocracia }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Mercado</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ medias_atual.mercado }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Hierarquia</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ medias_atual.hierarquia }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="bloco">
+    <h2>Cenário Ideal</h2>
+
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="text-align: left; padding: 10px; border-bottom: 1px solid #ccc;">Perfil</th>
+                <th style="text-align: left; padding: 10px; border-bottom: 1px solid #ccc;">Média</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Clã</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ medias_ideal.cla }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Adocracia</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ medias_ideal.adocracia }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Mercado</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ medias_ideal.mercado }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">Hierarquia</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ medias_ideal.hierarquia }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="bloco">
+    <a href="{{ url_for('admin_painel') }}" class="botao">Voltar ao painel</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('graficoRadarCVF');
+
+    const mediasAtual = [
+        {{ medias_atual.cla|default(0) }},
+        {{ medias_atual.adocracia|default(0) }},
+        {{ medias_atual.mercado|default(0) }},
+        {{ medias_atual.hierarquia|default(0) }}
+    ];
+
+    const mediasIdeal = [
+        {{ medias_ideal.cla|default(0) }},
+        {{ medias_ideal.adocracia|default(0) }},
+        {{ medias_ideal.mercado|default(0) }},
+        {{ medias_ideal.hierarquia|default(0) }}
+    ];
+
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Clã', 'Adocracia', 'Mercado', 'Hierarquia'],
+            datasets: [
+                {
+                    label: 'Atual',
+                    data: mediasAtual,
+                    fill: true
+                },
+                {
+                    label: 'Ideal',
+                    data: mediasIdeal,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                        stepSize: 20
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

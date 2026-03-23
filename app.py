@@ -12,12 +12,14 @@ from zoneinfo import ZoneInfo
 from config import Config
 from models import db, RespostaCVF, Empresa, Admin
 from forms_data import FORM_INSTRUCTIONS, DIMENSIONS
+from cvf_utils import calcular_resultado_cvf, montar_grupos_a_partir_de_dict
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
 db.init_app(app)
+
 
 def garantir_admin_inicial():
     """
@@ -36,6 +38,7 @@ def garantir_admin_inicial():
         print(f"Admin inicial criado com usuário: {username}")
     else:
         print(f"Admin já existe: {username}")
+
 
 def garantir_colunas_producao():
     """
@@ -125,16 +128,13 @@ def converter_utc_para_brasil(data_utc):
     if not data_utc:
         return None
 
-    # Se vier como texto, tenta converter para datetime
     if isinstance(data_utc, str):
         texto = data_utc.strip()
 
         try:
-            # Exemplo: 2026-03-24 12:30:00
             data_utc = datetime.fromisoformat(texto)
         except ValueError:
             try:
-                # Exemplo com Z no final: 2026-03-24T12:30:00Z
                 if texto.endswith("Z"):
                     texto = texto.replace("Z", "+00:00")
                     data_utc = datetime.fromisoformat(texto)
@@ -143,7 +143,6 @@ def converter_utc_para_brasil(data_utc):
             except ValueError:
                 return None
 
-    # Se a data veio sem fuso, assume UTC
     if data_utc.tzinfo is None:
         data_utc = data_utc.replace(tzinfo=timezone.utc)
 
@@ -157,7 +156,6 @@ def formatar_data_hora_brasil(data_utc):
     data_brasil = converter_utc_para_brasil(data_utc)
 
     if not data_brasil:
-        # Se não conseguir converter, devolve o valor original em texto
         return str(data_utc) if data_utc else ""
 
     return data_brasil.strftime("%Y-%m-%d %H:%M:%S")
@@ -270,6 +268,55 @@ def admin_required(func):
 
     return wrapper
 
+
+def admin_logado():
+    """
+    Retorna True se existe um admin logado na sessão.
+    """
+    return "admin_id" in session
+
+
+def resposta_para_dict(resposta):
+    """
+    Converte um objeto RespostaCVF em dicionário simples,
+    no formato esperado pelo cvf_utils.py.
+
+    Saída esperada:
+    atual_1_a, atual_1_b, atual_1_c, atual_1_d
+    ...
+    atual_6_d
+    ideal_1_a ... ideal_6_d
+    """
+    dados = {}
+
+    mapeamento_dimensoes = [
+        ("caracteristicas_dominantes", 1),
+        ("lideranca_organizacional", 2),
+        ("gestao_de_pessoas", 3),
+        ("elemento_de_uniao", 4),
+        ("enfase_estrategica", 5),
+        ("criterios_de_sucesso", 6),
+    ]
+
+    mapeamento_alternativas = {
+        1: "a",
+        2: "b",
+        3: "c",
+        4: "d",
+    }
+
+    for nome_dimensao, numero_grupo in mapeamento_dimensoes:
+        for numero_alternativa, letra_alternativa in mapeamento_alternativas.items():
+            campo_model_atual = f"{nome_dimensao}_atual_{numero_alternativa}"
+            campo_model_ideal = f"{nome_dimensao}_ideal_{numero_alternativa}"
+
+            campo_saida_atual = f"atual_{numero_grupo}_{letra_alternativa}"
+            campo_saida_ideal = f"ideal_{numero_grupo}_{letra_alternativa}"
+
+            dados[campo_saida_atual] = getattr(resposta, campo_model_atual, 0)
+            dados[campo_saida_ideal] = getattr(resposta, campo_model_ideal, 0)
+
+    return dados
 
 
 @app.route("/")
@@ -493,6 +540,7 @@ def admin_login():
 
     return render_template("admin_login.html")
 
+
 @app.route("/admin/esqueci-senha", methods=["GET", "POST"])
 def admin_esqueci_senha():
     """
@@ -529,6 +577,7 @@ def admin_esqueci_senha():
         return redirect(url_for("admin_login"))
 
     return render_template("admin_esqueci_senha.html")
+
 
 @app.route("/admin/alterar-senha", methods=["GET", "POST"])
 @admin_required
@@ -676,8 +725,6 @@ def admin_painel():
     erro_painel = None
 
     try:
-        # Contagem mais segura para produção:
-        # conta apenas o ID, sem depender de carregar todas as colunas do modelo.
         total_respostas = db.session.query(func.count(RespostaCVF.id)).scalar() or 0
     except Exception as e:
         erro_painel = f"Erro ao contar respostas: {e}"
@@ -697,6 +744,86 @@ def admin_painel():
         total_respostas=total_respostas,
         empresas=empresas,
         erro_painel=erro_painel
+    )
+
+
+@app.route("/admin/dashboard")
+@admin_required
+def admin_dashboard():
+    """
+    Dashboard administrativo com médias gerais do CVF
+    e filtro opcional por empresa.
+    """
+    codigo_empresa = request.args.get("cod_emp", "").strip()
+
+    empresas = Empresa.query.order_by(Empresa.nome.asc()).all()
+
+    query_respostas = RespostaCVF.query
+
+    empresa_selecionada = None
+
+    if codigo_empresa:
+        query_respostas = query_respostas.filter(RespostaCVF.cod_emp == codigo_empresa)
+        empresa_selecionada = Empresa.query.filter_by(codigo=codigo_empresa).first()
+
+    respostas = query_respostas.all()
+
+    if not respostas:
+        return render_template(
+            "admin_dashboard.html",
+            total_respostas=0,
+            medias_atual={
+                "cla": 0,
+                "adocracia": 0,
+                "mercado": 0,
+                "hierarquia": 0,
+            },
+            medias_ideal={
+                "cla": 0,
+                "adocracia": 0,
+                "mercado": 0,
+                "hierarquia": 0,
+            },
+            empresas=empresas,
+            codigo_empresa_selecionado=codigo_empresa,
+            empresa_selecionada=empresa_selecionada,
+        )
+
+    lista_resultados = []
+
+    for resposta in respostas:
+        dados = resposta_para_dict(resposta)
+
+        grupos_atual = montar_grupos_a_partir_de_dict(dados, "atual")
+        grupos_ideal = montar_grupos_a_partir_de_dict(dados, "ideal")
+
+        resultado = calcular_resultado_cvf(grupos_atual, grupos_ideal)
+        lista_resultados.append(resultado)
+
+    total = len(lista_resultados)
+
+    medias_atual = {
+        "cla": round(sum(r["atual"]["cla"] for r in lista_resultados) / total, 2),
+        "adocracia": round(sum(r["atual"]["adocracia"] for r in lista_resultados) / total, 2),
+        "mercado": round(sum(r["atual"]["mercado"] for r in lista_resultados) / total, 2),
+        "hierarquia": round(sum(r["atual"]["hierarquia"] for r in lista_resultados) / total, 2),
+    }
+
+    medias_ideal = {
+        "cla": round(sum(r["ideal"]["cla"] for r in lista_resultados) / total, 2),
+        "adocracia": round(sum(r["ideal"]["adocracia"] for r in lista_resultados) / total, 2),
+        "mercado": round(sum(r["ideal"]["mercado"] for r in lista_resultados) / total, 2),
+        "hierarquia": round(sum(r["ideal"]["hierarquia"] for r in lista_resultados) / total, 2),
+    }
+
+    return render_template(
+        "admin_dashboard.html",
+        total_respostas=total,
+        medias_atual=medias_atual,
+        medias_ideal=medias_ideal,
+        empresas=empresas,
+        codigo_empresa_selecionado=codigo_empresa,
+        empresa_selecionada=empresa_selecionada,
     )
 
 
@@ -720,11 +847,9 @@ def exportar_excel():
         ws.title = "Respostas CVF"
 
         if not linhas:
-            # Cabeçalho mínimo se não houver respostas
             ws.append(["Mensagem"])
             ws.append(["Nenhuma resposta encontrada para exportação."])
         else:
-            # Usa os nomes reais das colunas vindas do banco
             colunas = list(linhas[0].keys())
             ws.append(colunas)
 
@@ -734,7 +859,6 @@ def exportar_excel():
                 for coluna in colunas:
                     valor = linha_dict.get(coluna)
 
-                    # Converte data_envio para horário do Brasil, se existir
                     if coluna == "data_envio" and valor:
                         valor = formatar_data_hora_brasil(valor)
 
