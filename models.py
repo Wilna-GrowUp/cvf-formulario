@@ -1,5 +1,6 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -84,6 +85,7 @@ class RespostaCVF(db.Model):
     def __repr__(self):
         return f"<RespostaCVF {self.identificador}>"
 
+
 class Empresa(db.Model):
     __tablename__ = "empresas"
 
@@ -106,3 +108,27 @@ class Empresa(db.Model):
 
     def __repr__(self):
         return f"<Empresa {self.nome}>"
+
+
+class Admin(db.Model):
+    __tablename__ = "admins"
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    criado_em = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    atualizado_em = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
+
+    def set_password(self, senha):
+        self.password_hash = generate_password_hash(senha)
+
+    def check_password(self, senha):
+        return check_password_hash(self.password_hash, senha)
+
+    def __repr__(self):
+        return f"<Admin {self.username}>"
