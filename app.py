@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime, date, timezone
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, make_response
 from openpyxl import Workbook
-from sqlalchemy import func
+from sqlalchemy import func, text
 from zoneinfo import ZoneInfo
 
 from config import Config
@@ -59,12 +59,14 @@ def coletar_respostas():
 
     return dados
 
+
 def cookie_deve_ser_secure():
     """
     Em produção (Render com HTTPS), o cookie deve ser secure=True.
     Localmente, deve ser False.
     """
     return not app.debug
+
 
 def converter_utc_para_brasil(data_utc):
     """
@@ -73,8 +75,8 @@ def converter_utc_para_brasil(data_utc):
     if not data_utc:
         return None
 
-    # Se a data veio sem informação de fuso, assumimos que ela está em UTC
-    data_utc = data_utc.replace(tzinfo=timezone.utc)
+    if data_utc.tzinfo is None:
+        data_utc = data_utc.replace(tzinfo=timezone.utc)
 
     return data_utc.astimezone(ZoneInfo("America/Sao_Paulo"))
 
@@ -113,6 +115,7 @@ def validar_somas(dados):
             erros.append(f"{titulo} - cenário ideal soma {soma_ideal} e deve ser 100")
 
     return erros
+
 
 def gerar_token_anonimo():
     """
@@ -182,6 +185,7 @@ def gerar_codigo_empresa(nome_empresa, data_cadastro, quantidade_existente):
 
     return f"{iniciais}-{data_formatada}{sequencial:02d}"
 
+
 def admin_required(func):
     """
     Protege rotas administrativas.
@@ -222,6 +226,7 @@ def consentimento():
 
     return render_template("consentimento.html")
 
+
 @app.route("/codigo", methods=["GET", "POST"])
 def codigo_empresa():
     """
@@ -260,19 +265,19 @@ def codigo_empresa():
             )
             return render_template("codigo_empresa.html")
 
-        # salva o código na sessão
         session["cod_emp"] = empresa.codigo
 
         return redirect(url_for("pesquisa"))
 
     return render_template("codigo_empresa.html")
 
-# código aqui
+
 @app.route("/pesquisa", methods=["GET", "POST"])
 def pesquisa():
     if not session.get("cod_emp"):
         flash("Informe o código da empresa para acessar a pesquisa.", "erro")
         return redirect(url_for("codigo_empresa"))
+
     if navegador_ja_respondeu():
         return render_template("resposta_bloqueada.html")
 
@@ -295,7 +300,6 @@ def pesquisa():
                 form_instructions=FORM_INSTRUCTIONS,
                 dimensions=DIMENSIONS
             )
-
 
         token = gerar_token_anonimo()
         token_hash = gerar_hash_token(token)
@@ -394,6 +398,7 @@ def pesquisa():
         dimensions=DIMENSIONS
     )
 
+
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     """
@@ -471,8 +476,6 @@ def admin_painel():
             func.lower(Empresa.nome) == nome_normalizado
         ).order_by(Empresa.data_inicio.asc()).all()
 
-        # REGRA 1:
-        # mesma empresa + mesma data de início = atualiza data final e mantém o código
         for empresa_existente in empresas_mesmo_nome:
             nome_existente_normalizado = normalizar_nome_empresa(empresa_existente.nome)
 
@@ -486,8 +489,6 @@ def admin_painel():
                 )
                 return redirect(url_for("admin_painel"))
 
-        # REGRA 2:
-        # nova data de início não pode cair dentro de um período já existente da mesma empresa
         for empresa_existente in empresas_mesmo_nome:
             nome_existente_normalizado = normalizar_nome_empresa(empresa_existente.nome)
 
@@ -499,8 +500,6 @@ def admin_painel():
                     )
                     return redirect(url_for("admin_painel"))
 
-        # REGRA 3:
-        # se chegou até aqui, é uma nova pesquisa válida para a mesma empresa
         quantidade_existente = len(empresas_mesmo_nome)
         codigo = gerar_codigo_empresa(nome, data_cadastro, quantidade_existente)
 
@@ -517,14 +516,34 @@ def admin_painel():
         flash(f"Empresa/pesquisa cadastrada com sucesso. Código gerado: {codigo}", "sucesso")
         return redirect(url_for("admin_painel"))
 
-    total_respostas = RespostaCVF.query.count()
-    empresas = Empresa.query.order_by(Empresa.id.desc()).all()
+    total_respostas = 0
+    empresas = []
+    erro_painel = None
+
+    try:
+        # Contagem mais segura para produção:
+        # conta apenas o ID, sem depender de carregar todas as colunas do modelo.
+        total_respostas = db.session.query(func.count(RespostaCVF.id)).scalar() or 0
+    except Exception as e:
+        erro_painel = f"Erro ao contar respostas: {e}"
+        print(erro_painel)
+
+    try:
+        empresas = Empresa.query.order_by(Empresa.id.desc()).all()
+    except Exception as e:
+        if erro_painel:
+            erro_painel += f" | Erro ao buscar empresas: {e}"
+        else:
+            erro_painel = f"Erro ao buscar empresas: {e}"
+        print(erro_painel)
 
     return render_template(
         "admin_painel.html",
         total_respostas=total_respostas,
-        empresas=empresas
+        empresas=empresas,
+        erro_painel=erro_painel
     )
+
 
 @app.route("/admin/exportar-excel")
 @admin_required
@@ -584,8 +603,6 @@ def exportar_excel():
 
 @app.route("/criar-coluna")
 def criar_coluna():
-    from sqlalchemy import text
-
     try:
         db.session.execute(text("""
             ALTER TABLE respostas_cvf
@@ -604,6 +621,7 @@ def criar_coluna():
     except Exception as e:
         db.session.rollback()
         return f"Erro: {e}"
+
 
 if __name__ == "__main__":
     app.run(debug=True)
