@@ -1,6 +1,9 @@
 import os
 
 
+import os
+
+
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "chave-local-simples")
 
@@ -16,5 +19,14 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Senha simples do administrador
+    # Usuário inicial do administrador
+    ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+
+    # Senha inicial do administrador
+    ADMIN_PASSWORD_INICIAL = os.getenv("ADMIN_PASSWORD_INICIAL", "admin123")
+
+    # Código secreto usado para recuperar acesso na tela "Esqueci a senha"
+    ADMIN_RESET_CODE = os.getenv("ADMIN_RESET_CODE", "RECUPERAR-123")
+
+    # Mantido por compatibilidade com versões antigas do projeto
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
