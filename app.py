@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime, date, timezone
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, make_response
 from openpyxl import Workbook
-from sqlalchemy import func, text
+from sqlalchemy import func, text, inspect
 from zoneinfo import ZoneInfo
 
 from config import Config
@@ -19,8 +19,36 @@ app.config.from_object(Config)
 
 db.init_app(app)
 
+
+def garantir_colunas_producao():
+    """
+    Garante que colunas novas existentes no código também existam
+    no banco de produção.
+    """
+    inspector = inspect(db.engine)
+    colunas = [col["name"] for col in inspector.get_columns("respostas_cvf")]
+
+    comandos = []
+
+    if "cod_emp" not in colunas:
+        comandos.append("ALTER TABLE respostas_cvf ADD COLUMN cod_emp VARCHAR(50)")
+
+    if "response_token_hash" not in colunas:
+        comandos.append("ALTER TABLE respostas_cvf ADD COLUMN response_token_hash VARCHAR(255)")
+
+    for sql in comandos:
+        db.session.execute(text(sql))
+
+    if comandos:
+        db.session.commit()
+        print("Banco atualizado com sucesso. Colunas adicionadas:", comandos)
+    else:
+        print("Banco já está atualizado. Nenhuma coluna nova foi necessária.")
+
+
 with app.app_context():
     db.create_all()
+    garantir_colunas_producao()
 
 COOKIE_NAME = "cvf_resposta_token"
 
@@ -223,6 +251,7 @@ def admin_required(func):
         return func(*args, **kwargs)
 
     return wrapper
+
 
 
 @app.route("/")
