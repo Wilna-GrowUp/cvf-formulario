@@ -71,10 +71,33 @@ def cookie_deve_ser_secure():
 def converter_utc_para_brasil(data_utc):
     """
     Recebe uma data UTC salva no banco e converte para o horário de São Paulo.
+
+    Aceita:
+    - datetime do Python
+    - string em formato de data/hora
     """
     if not data_utc:
         return None
 
+    # Se vier como texto, tenta converter para datetime
+    if isinstance(data_utc, str):
+        texto = data_utc.strip()
+
+        try:
+            # Exemplo: 2026-03-24 12:30:00
+            data_utc = datetime.fromisoformat(texto)
+        except ValueError:
+            try:
+                # Exemplo com Z no final: 2026-03-24T12:30:00Z
+                if texto.endswith("Z"):
+                    texto = texto.replace("Z", "+00:00")
+                    data_utc = datetime.fromisoformat(texto)
+                else:
+                    return None
+            except ValueError:
+                return None
+
+    # Se a data veio sem fuso, assume UTC
     if data_utc.tzinfo is None:
         data_utc = data_utc.replace(tzinfo=timezone.utc)
 
@@ -88,7 +111,8 @@ def formatar_data_hora_brasil(data_utc):
     data_brasil = converter_utc_para_brasil(data_utc)
 
     if not data_brasil:
-        return ""
+        # Se não conseguir converter, devolve o valor original em texto
+        return str(data_utc) if data_utc else ""
 
     return data_brasil.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -550,55 +574,58 @@ def admin_painel():
 def exportar_excel():
     """
     Exporta todas as respostas para um arquivo Excel.
+    Usa SQL direto para ler a estrutura real do banco em produção,
+    evitando erro por diferença entre o modelo Python e a tabela.
     """
-    respostas = RespostaCVF.query.all()
+    try:
+        resultado = db.session.execute(
+            text("SELECT * FROM respostas_cvf ORDER BY id")
+        )
 
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Respostas CVF"
+        linhas = resultado.mappings().all()
 
-    colunas = ["cod_emp", "ID", "Consentimento", "Data"]
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Respostas CVF"
 
-    for dimension in DIMENSIONS:
-        dimension_id = dimension["id"]
+        if not linhas:
+            # Cabeçalho mínimo se não houver respostas
+            ws.append(["Mensagem"])
+            ws.append(["Nenhuma resposta encontrada para exportação."])
+        else:
+            # Usa os nomes reais das colunas vindas do banco
+            colunas = list(linhas[0].keys())
+            ws.append(colunas)
 
-        for i in range(1, 5):
-            colunas.append(f"{dimension_id}_atual_{i}")
+            for linha_dict in linhas:
+                linha_excel = []
 
-        for i in range(1, 5):
-            colunas.append(f"{dimension_id}_ideal_{i}")
+                for coluna in colunas:
+                    valor = linha_dict.get(coluna)
 
-    ws.append(colunas)
+                    # Converte data_envio para horário do Brasil, se existir
+                    if coluna == "data_envio" and valor:
+                        valor = formatar_data_hora_brasil(valor)
 
-    for resposta in respostas:
-        linha = [
-            resposta.cod_emp,
-            resposta.id,
-            resposta.consentimento,
-            formatar_data_hora_brasil(resposta.data_envio)
-        ]
+                    linha_excel.append(valor)
 
-        for dimension in DIMENSIONS:
-            dimension_id = dimension["id"]
+                ws.append(linha_excel)
 
-            for i in range(1, 5):
-                linha.append(getattr(resposta, f"{dimension_id}_atual_{i}"))
+        arquivo = BytesIO()
+        wb.save(arquivo)
+        arquivo.seek(0)
 
-            for i in range(1, 5):
-                linha.append(getattr(resposta, f"{dimension_id}_ideal_{i}"))
+        return send_file(
+            arquivo,
+            as_attachment=True,
+            download_name="respostas_cvf.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
-        ws.append(linha)
-
-    arquivo = BytesIO()
-    wb.save(arquivo)
-    arquivo.seek(0)
-
-    return send_file(
-        arquivo,
-        as_attachment=True,
-        download_name="respostas_cvf.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    except Exception as e:
+        print(f"Erro ao exportar Excel: {e}")
+        flash(f"Erro ao exportar Excel: {e}", "erro")
+        return redirect(url_for("admin_painel"))
 
 
 @app.route("/criar-coluna")
