@@ -1,3 +1,53 @@
+# 🔒 Variáveis sensíveis
+
 .env
-__pycache__/
+
+# 🧠 Python
+
+**pycache**/
+*.pyc
+*.pyo
+
+# 🗂️ Banco local
+
 instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# 📦 Ambiente virtual
+
+venv/
+env/
+.venv/
+
+# 🧾 Logs
+
+*.log
+
+# 🧪 Arquivos temporários
+
+*.tmp
+*.temp
+
+# 📁 Sistema operacional
+
+.DS_Store
+Thumbs.db
+
+# 🚫 Cache Flask
+
+.flaskenv
+
+# 🚫 Testes
+
+.pytest_cache/
+
+# 🚫 Editor
+
+.vscode/
+.idea/
+
+# 📤 Exportações
+
+exports/

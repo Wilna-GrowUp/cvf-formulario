@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from functools import wraps
 from io import BytesIO
 import secrets
@@ -16,6 +19,7 @@ from cvf_utils import calcular_resultado_cvf, montar_grupos_a_partir_de_dict
 
 
 app = Flask(__name__)
+
 app.config.from_object(Config)
 
 db.init_app(app)
