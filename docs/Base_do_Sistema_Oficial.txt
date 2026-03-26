@@ -1,0 +1,310 @@
+Este é o CHAT 1 oficial do projeto CVF Insight – Plataforma de Diagnóstico Cultural.
+
+Substitui integralmente todas as versões anteriores.
+
+Os chats anteriores foram arquivados como histórico, sendo utilizados exclusivamente como referência de decisões, aprendizados e evolução do sistema, não fazendo parte da execução atual.
+
+---
+
+📁 CHAT 1 — 🧠 BASE DO SISTEMA — VERSÃO OFICIAL
+
+---
+
+# 1. 🆔 Identidade do Projeto
+
+**Nome:** CVF Insight – Plataforma de Diagnóstico Cultural
+
+**Objetivo:**
+Desenvolver um sistema web de diagnóstico de cultura organizacional baseado no modelo CVF (Competing Values Framework), com foco em gerar insights acionáveis para empresas.
+
+**Características do sistema:**
+
+* Sistema em produção com dados reais
+* Foco em confiabilidade e estabilidade
+* Evolução incremental e segura
+* Usuário final não técnico
+* Ênfase em anonimato e clareza
+
+---
+
+# 2. 📊 Fase Atual e Regra Crítica
+
+🔵 **Fase Atual: Fase 2 — Análise e Interpretação**
+
+**Objetivos da fase:**
+
+* Transformar dados em informação
+* Calcular perfis culturais (CVF)
+* Gerar médias e comparações (Atual vs Ideal)
+* Estruturar dashboard
+* Manter estabilidade em produção
+
+---
+
+⚠️ **REGRA CRÍTICA — CONTROLE DE FASE**
+
+Nenhuma evolução deve ser implementada fora da fase atual sem validação prévia no CHAT 1 — Base do Sistema.
+
+Se uma solicitação:
+
+* ❌ Não pertence à fase atual
+  → Deve ser classificada como evolução futura
+  → Não deve ser implementada
+
+---
+
+# 2.1 🧠 Origem e Evolução do Sistema
+
+O sistema foi desenvolvido de forma incremental a partir de múltiplos chats, posteriormente organizados e classificados como histórico.
+
+Os chats históricos não fazem parte da execução atual, sendo utilizados apenas como referência de decisões, aprendizados e evolução do sistema.
+
+---
+
+### 🔹 Fase 1 — Coleta e Estruturação
+
+* Implementação do formulário CVF completo
+* Validação da regra de soma (100)
+* Salvamento no banco de dados
+* Estrutura base do sistema
+* Painel administrativo inicial
+
+---
+
+### 🔹 Fase 2 — Controle e Estabilização
+
+* Implementação de controle de respostas (token/hash)
+* Ajustes de segurança e anonimato
+* Correções de erro em produção (erro 500)
+* Separação entre autenticação e acesso ao banco
+* Uso de logs para diagnóstico
+
+---
+
+### 🔹 Fase 3 — Camada Analítica
+
+* Implementação do cálculo CVF
+* Criação do módulo cvf_utils.py
+* Separação entre cálculo, backend e banco
+* Adaptação ao modelo real de dados
+* Criação da rota /admin/dashboard
+
+---
+
+### 🔹 Diretrizes consolidadas
+
+* Não refatorar estrutura prematuramente
+* Priorizar mudanças de baixo risco
+* Separar responsabilidades por camada
+* Nunca acoplar lógica de cálculo ao banco diretamente
+* Estabilizar antes de evoluir
+* Utilizar logs como principal ferramenta de diagnóstico
+
+---
+
+# 3. 🧱 Arquitetura do Sistema
+
+**Stack oficial:**
+
+* Backend: Flask
+* Banco de dados: PostgreSQL
+* Deploy: Render
+* Frontend: HTML + Jinja
+* Interatividade: JavaScript
+
+---
+
+**Princípios arquiteturais:**
+
+* Manter estrutura atual (evitar refatorações desnecessárias)
+* Evitar duplicação de lógica
+* Integrar novas funcionalidades ao fluxo existente
+* Priorizar simplicidade e previsibilidade
+
+---
+
+# 3.1 📁 Estrutura Oficial do Projeto (Fonte da Verdade)
+
+A estrutura abaixo representa a organização real do projeto em produção e deve ser considerada como referência obrigatória para qualquer alteração ou implementação.
+
+Qualquer sugestão de código deve respeitar essa estrutura.
+
+CVF_FORMULARIO/
+│
+├── app.py
+├── config.py
+├── models.py
+├── forms_data.py
+├── cvf_utils.py
+├── requirements.txt
+├── .env
+├── .gitignore
+│
+├── docs/
+│   ├── Base do Sistema Oficial.txt
+│   ├── comandos_projeto.md
+│   ├── Manual de comandos — CVF Insight.md
+│   ├── operacao_chatgpt.md
+│   ├── versao_v1.md
+│
+├── exports/
+│
+├── instance/
+│   └── cvf_local.db
+│
+├── static/
+│   ├── css/
+│   │   └── style.css
+│   ├── img/
+│   │   └── capa.png
+│   ├── js/
+│   │   └── form.js
+│
+├── templates/
+│   ├── base.html
+│   ├── index.html
+│   ├── tela_inicial.html
+│   ├── consentimento.html
+│   ├── codigo_empresa.html
+│   ├── pesquisa.html
+│   ├── resposta_bloqueada.html
+│   ├── sucesso.html
+│   │
+│   ├── admin_login.html
+│   ├── admin_esqueci_senha.html
+│   ├── admin_alterar_senha.html
+│   ├── admin_painel.html
+│   ├── admin_dashboard.html
+│
+└── **pycache**/ (ignorar)
+
+⚠️ Qualquer sugestão que não respeite essa estrutura deve ser considerada inválida e ajustada antes de implementação.
+
+---
+
+# 4. ⚙️ Regras de Governança
+
+**Regras obrigatórias:**
+
+* Não alterar arquitetura sem justificativa forte
+* Não duplicar lógica existente
+* Sempre integrar ao sistema atual
+* Sempre indicar onde alterar (arquivo/camada)
+* Priorizar baixo risco
+* Considerar que o sistema está em produção
+
+---
+
+**Segurança e estabilidade:**
+
+* Evitar quebra de funcionalidades existentes
+* Preservar anonimato do respondente
+* Validar impacto antes de implementar
+* Preferir mudanças incrementais
+
+---
+
+**Foco no usuário:**
+
+* Linguagem simples (usuária leiga)
+* Passo a passo obrigatório
+* Código completo quando necessário
+* Explicação de onde salvar e como testar
+
+---
+
+**Direcionamento obrigatório:**
+
+Toda resposta deve indicar:
+
+* próximo passo
+* chat correto para continuar
+* comando sugerido
+
+---
+
+# 5. 🔄 Versionamento
+
+Toda melhoria deve conter:
+
+* Classificação de impacto: baixo / médio / alto
+* Avaliação de risco de quebra
+* Sugestão de versão (ex: V1.1, V2.0)
+* Mensagem de commit
+* Sugestão de atualização da documentação
+* Comandos Git
+
+---
+
+# 6. 🗂️ Organização dos Chats
+
+📁 CHAT 1 — 🧠 Base do Sistema (MESTRE)
+Função:
+
+* Arquitetura
+* Governança
+* Regras oficiais
+* Decisões finais
+
+---
+
+📁 CHAT 2 — 💻 Desenvolvimento
+Função:
+
+* Código
+* Rotas
+* Banco
+* Debug
+
+Permitido:
+
+* Fase 1 e Fase 2
+
+---
+
+📁 CHAT 3 — 📊 Analytics
+Função:
+
+* Cálculo CVF
+* Indicadores
+* Dashboards
+* Interpretação
+
+⚠️ Fase ativa
+
+---
+
+📁 CHAT 4 — 🚀 Produto e Estratégia
+Função:
+
+* Roadmap
+* Funcionalidades futuras
+* Valor para cliente
+* Modelo de negócio
+
+---
+
+# 7. 📌 REGRA 11 — COMANDO MESTRE
+
+(Manter exatamente como já está — sem alterações)
+
+---
+
+# 8. 🧾 Registro de Versão Atual
+
+**Versão:** V2.0 — Base Atualizada com Camada Analítica
+**Status:** Ativo em produção
+**Tipo:** Estrutural + Evolução
+**Impacto:** Alto
+**Risco técnico:** Baixo
+
+---
+
+📌 **Histórico**
+
+* Consolidação da governança
+* Padronização dos chats
+* Criação da REGRA 11
+* Definição de controle de fase
+* Formalização do versionamento
+* Inclusão da camada analítica (CVF)
