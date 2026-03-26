@@ -1,9 +1,6 @@
 import os
 
 
-import os
-
-
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "chave-local-simples")
 
